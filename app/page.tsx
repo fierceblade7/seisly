@@ -25,12 +25,58 @@ export default function Home() {
     },
     {
       q: "My company structure is complicated. Can Seisly still help?",
-      a: "Run the free eligibility check and we will flag any complexity. Most edge cases, including subsidiaries, non-standard share classes, and prior funding rounds, are handled automatically. For genuinely unusual structures, we will tell you upfront if you need a specialist.",
+      a: "Yes. Unlike some services that refer complex cases elsewhere, we handle them. Our founder has spent over a decade working with HMRC on SEIS and EIS applications across all kinds of structures. Run the eligibility check and we will tell you exactly where you stand.",
     },
     {
       q: "Is there a monthly subscription?",
       a: "Never. You pay once per application. That is it. Optional add-ons like ongoing compliance monitoring will always be exactly that, optional.",
     },
+  ];
+
+  const vsRows = [
+    { label: "SEIS advance assurance", a: "£2,000+", b: "£399 + plan", c: "£79" },
+    { label: "EIS advance assurance", a: "£2,500+", b: "£799 + plan", c: "£129" },
+    { label: "SEIS and EIS together", a: "£3,000+", b: "£999 + plan", c: "£149" },
+    { label: "Investor certificates included", a: "✗", b: "✓", c: "✓" },
+    { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
+    { label: "Instant eligibility check", a: "✗", b: "✓", c: "✓" },
+    { label: "Complex cases handled", a: "✓", b: "✗", c: "✓" },
+    { label: "HMRC query support included", a: "✗ billed extra", b: "✗", c: "✓" },
+    { label: "Compliance tracking included", a: "✗", b: "✗", c: "✓" },
+    { label: "Built by SEIS fund founders", a: "✗", b: "✗", c: "✓" },
+    { label: "Money-back guarantee", a: "✗", b: "✗", c: "✓" },
+  ];
+
+  const plans = [
+    {
+      name: "SEIS only", price: "79", featured: false,
+      features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "SEIS1 form completion", "Investor certificates (SEIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
+    },
+    {
+      name: "SEIS and EIS", price: "149", featured: true,
+      features: ["Everything in SEIS", "EIS advance assurance", "EIS1 form completion", "Investor certificates (EIS3)", "HMRC query support (both)", "Compliance tracking (3 years)", "Complex cases handled", "Money-back guarantee"],
+    },
+    {
+      name: "EIS only", price: "129", featured: false,
+      features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "EIS1 form completion", "Investor certificates (EIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
+    },
+  ];
+
+  const steps = [
+    { n: 1, title: "Check your eligibility", desc: "Answer a few questions about your company and we check you against all HMRC qualifying conditions for SEIS and EIS. Free, instant, and no account needed.", tag: "Takes 5 minutes" },
+    { n: 2, title: "Tell us about your raise", desc: "How much are you raising, from how many investors, and on what terms. We use this to complete your application correctly first time.", tag: "No jargon, plain English throughout" },
+    { n: 3, title: "We draft your application", desc: "Our AI generates your full advance assurance submission, including the covering letter HMRC expects, built from over a decade of real applications.", tag: "AI-powered, expert-trained" },
+    { n: 4, title: "Review, approve, submit", desc: "Read through your application, make any tweaks, and submit directly to HMRC's SEIS and EIS team. We track the status and alert you to any updates.", tag: "HMRC turnaround: 4 to 8 weeks" },
+    { n: 5, title: "Issue investor certificates", desc: "Once approved and shares are issued, generate SEIS3 or EIS3 certificates for every investor in one click. Ready to send straight away.", tag: "Included in your one-off fee" },
+  ];
+
+  const features = [
+    { icon: "⚡", title: "Instant eligibility check", desc: "Know in 5 minutes whether you qualify, before you spend a penny." },
+    { icon: "✍️", title: "AI advance assurance letter", desc: "A proper covering letter drafted to HMRC's expectations, trained on a decade of real applications." },
+    { icon: "📋", title: "SEIS1 and EIS1 forms", desc: "All required HMRC forms completed and formatted correctly. Nothing left blank." },
+    { icon: "📄", title: "Investor certificates", desc: "SEIS3 and EIS3 certificates generated automatically once HMRC approves and shares are issued." },
+    { icon: "🔔", title: "Compliance reminders", desc: "We track your 3-year compliance window and alert you when action is needed." },
+    { icon: "💬", title: "HMRC query support", desc: "If HMRC writes back with questions, we help you respond. Included, not billed by the hour." },
   ];
 
   return (
@@ -39,9 +85,7 @@ export default function Home() {
       {/* NAV */}
       <nav className="sticky top-0 z-50 bg-[#fafaf8]/90 backdrop-blur-md border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between">
         <div>
-          <div className="font-serif text-2xl tracking-tight">
-            Seis<span className="text-[#0d7a5f]">ly</span>
-          </div>
+          <div className="font-serif text-2xl tracking-tight">Seis<span className="text-[#0d7a5f]">ly</span></div>
           <div className="text-[11px] text-[#aaa] tracking-wide -mt-0.5">Seisly done.</div>
         </div>
         <div className="flex items-center gap-6">
@@ -62,18 +106,18 @@ export default function Home() {
           <span className="w-1.5 h-1.5 bg-[#0d7a5f] rounded-full animate-pulse" />
           Now in early access
         </div>
-
-        <h1 className="font-serif text-[clamp(42px,6vw,72px)] leading-[1.0] tracking-[-2px] mb-6">
+        <h1 className="font-serif text-[clamp(42px,6vw,72px)] leading-[1.0] tracking-[-2px] mb-4">
           Need SEIS or EIS<br />advance assurance?<br />
           <em className="text-[#0d7a5f] not-italic font-serif">Seisly done.</em>
         </h1>
-
-        <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
-          Go from idea to HMRC-ready application in under an hour.{" "}
-          <strong className="text-[#1a1a18] font-medium">No lawyers. No accountants. No monthly plans.</strong>{" "}
-          Just &pound;99.
+        <p className="font-serif text-[clamp(24px,3vw,36px)] text-[#1a1a18] mb-6 tracking-tight">
+          &pound;79. Not &pound;2,000.
         </p>
-
+        <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
+          HMRC-ready in under an hour.{" "}
+          <strong className="text-[#1a1a18] font-medium">No lawyers. No accountants. No monthly plans.</strong>{" "}
+          Built by the founder of the UK&apos;s first SEIS fund.
+        </p>
         <div className="flex gap-3 justify-center flex-wrap mb-3">
           <Link href="/eligibility">
             <button className="bg-[#0d7a5f] text-white font-medium px-8 py-4 rounded-lg text-sm hover:bg-[#0a5c47] transition-all hover:-translate-y-px">
@@ -99,24 +143,24 @@ export default function Home() {
             <div className="bg-white p-5 text-center">
               <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Professional fees</div>
               <div className="text-sm font-medium text-[#555] mb-3">Lawyers and accountants</div>
-              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;2,500</div>
+              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;2,000+</div>
               <div className="text-[11px] text-[#aaa] mt-1">avg. professional fee</div>
             </div>
             <div className="bg-white p-5 text-center">
               <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Platform</div>
               <div className="text-sm font-medium text-[#555] mb-3">SeedLegals</div>
-              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;799</div>
-              <div className="text-[11px] text-[#aaa] mt-1">+ &pound;99/mo subscription</div>
+              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;399+</div>
+              <div className="text-[11px] text-[#aaa] mt-1">+ monthly subscription</div>
             </div>
             <div className="bg-[#f0faf6] p-5 text-center">
-              <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&larr; This is us</div>
+              <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; This is us</div>
               <div className="text-sm font-medium text-[#0d7a5f] mb-3">Seisly</div>
-              <div className="font-serif text-[34px] text-[#0d7a5f] leading-none">&pound;99</div>
+              <div className="font-serif text-[34px] text-[#0d7a5f] leading-none">&pound;79</div>
               <div className="text-[11px] text-[#aaa] mt-1">one-time. all-in. done.</div>
             </div>
           </div>
           <p className="text-center text-sm text-[#0a5c47] font-medium mt-5">
-            Save up to &pound;700 vs SeedLegals. Save &pound;2,400 vs a professional.
+            Save over &pound;300 vs SeedLegals. Save &pound;1,900 vs a professional.
           </p>
         </div>
       </section>
@@ -126,10 +170,10 @@ export default function Home() {
         <div className="max-w-2xl mx-auto">
           <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-5">Why trust us</p>
           <blockquote className="font-serif text-[clamp(20px,2.5vw,28px)] text-white leading-relaxed italic mb-6">
-            &ldquo;Built by the founder of the UK&apos;s first SEIS fund. Over a decade helping startups take their first steps.&rdquo;
+            &ldquo;Built by the founder of the UK&apos;s first SEIS fund in 2012. Not an AI consultancy that built this as a side project. Someone who has sat on both sides of the table: as the fund writing the cheques, and as the person helping founders get ready to receive them.&rdquo;
           </blockquote>
           <p className="text-sm text-[#888] leading-relaxed">
-            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying a lawyer or accountant thousands of pounds for a form-filling exercise never made sense. Seisly fixes that.
+            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for a form-filling exercise never made sense. Seisly fixes that. And because we have spent over a decade doing this for real, we handle the complex cases that other tools cannot.
           </p>
         </div>
       </section>
@@ -142,15 +186,8 @@ export default function Home() {
             From zero to HMRC-ready<br />in under an hour
           </h2>
           <p className="text-base text-[#666] mb-12 font-light">We handle the complexity. You focus on building.</p>
-
           <div className="divide-y divide-[#f0f0ec]">
-            {[
-              { n: 1, title: "Check your eligibility", desc: "Answer a few questions about your company and we check you against all HMRC qualifying conditions for SEIS and EIS. Free, instant, and no account needed.", tag: "Takes 5 minutes" },
-              { n: 2, title: "Tell us about your raise", desc: "How much are you raising, from how many investors, and on what terms. We use this to complete your application correctly first time.", tag: "No jargon, plain English throughout" },
-              { n: 3, title: "We draft your application", desc: "Our AI generates your full advance assurance submission, including the covering letter HMRC expects, built from over a decade of real applications.", tag: "AI-powered, expert-trained" },
-              { n: 4, title: "Review, approve, submit", desc: "Read through your application, make any tweaks, and submit directly to HMRC's SEIS/EIS team. We track the status and alert you to any updates.", tag: "HMRC turnaround: 4 to 8 weeks" },
-              { n: 5, title: "Issue investor certificates", desc: "Once approved and shares are issued, generate SEIS3 or EIS3 certificates for every investor in one click. Ready to send straight away.", tag: "Included in your one-off fee" },
-            ].map((step) => (
+            {steps.map((step) => (
               <div key={step.n} className="grid grid-cols-[48px_1fr] gap-6 py-7 items-start">
                 <div className="w-9 h-9 rounded-full bg-[#e8f5f1] border border-[#c0e8db] text-[#0a5c47] text-sm font-medium flex items-center justify-center flex-shrink-0 mt-0.5">
                   {step.n}
@@ -158,9 +195,7 @@ export default function Home() {
                 <div>
                   <h4 className="text-base font-medium mb-1">{step.title}</h4>
                   <p className="text-sm text-[#666] leading-relaxed">{step.desc}</p>
-                  <span className="inline-block mt-2 bg-[#f5f5f2] text-[#888] text-[11px] px-2 py-0.5 rounded">
-                    {step.tag}
-                  </span>
+                  <span className="inline-block mt-2 bg-[#f5f5f2] text-[#888] text-[11px] px-2 py-0.5 rounded">{step.tag}</span>
                 </div>
               </div>
             ))}
@@ -176,16 +211,8 @@ export default function Home() {
             Everything you need.<br />Nothing you don&apos;t.
           </h2>
           <p className="text-base text-[#888] mb-10 font-light">One flat fee covers the entire SEIS or EIS journey, start to finish.</p>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#2a2a28] rounded-xl overflow-hidden">
-            {[
-              { icon: "\u26A1", title: "Instant eligibility check", desc: "Know in 5 minutes whether you qualify, before you spend a penny." },
-              { icon: "\u270F\uFE0F", title: "AI advance assurance letter", desc: "A proper covering letter drafted to HMRC's expectations, trained on a decade of real applications." },
-              { icon: "\uD83D\uDCCB", title: "SEIS1 and EIS1 forms", desc: "All required HMRC forms completed and formatted correctly. Nothing left blank." },
-              { icon: "\uD83D\uDD10", title: "Investor certificates", desc: "SEIS3 and EIS3 certificates generated automatically once HMRC approves and shares are issued." },
-              { icon: "\uD83D\uDD14", title: "Compliance reminders", desc: "We track your 3-year compliance window and alert you when action is needed." },
-              { icon: "\uD83D\uDCAC", title: "HMRC query support", desc: "If HMRC writes back with questions, we help you respond. Included, not billed by the hour." },
-            ].map((f) => (
+            {features.map((f) => (
               <div key={f.title} className="bg-[#1a1a18] p-7 hover:bg-[#222220] transition-colors">
                 <div className="text-xl mb-4">{f.icon}</div>
                 <h4 className="text-sm font-medium text-white mb-2">{f.title}</h4>
@@ -202,7 +229,6 @@ export default function Home() {
           <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">The honest comparison</p>
           <h2 className="font-serif text-[clamp(30px,3.5vw,46px)] leading-tight tracking-tight mb-2">Seisly vs everyone else</h2>
           <p className="text-base text-[#666] mb-10 font-light">We are not the only option. We are just the best one.</p>
-
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -210,25 +236,16 @@ export default function Home() {
                   <th className="text-left py-3 px-4 text-[11px] text-[#aaa] uppercase tracking-wide font-medium"></th>
                   <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">Lawyers and accountants</th>
                   <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">SeedLegals</th>
-                  <th className="text-center py-3 px-4 text-[13px] text-[#0d7a5f] font-medium">Seisly &larr;</th>
+                  <th className="text-center py-3 px-4 text-[13px] text-[#0d7a5f] font-medium">Seisly &#10022;</th>
                 </tr>
               </thead>
               <tbody>
-                {[
-                  ["SEIS advance assurance", "\u00A32,000 to \u00A33,000", "\u00A3799 + plan", "\u00A399"],
-                  ["EIS advance assurance", "\u00A32,500 to \u00A34,000", "\u00A3999 + plan", "\u00A3149"],
-                  ["Investor certificates included", "\u2717", "\u2717", "\u2713"],
-                  ["No monthly subscription", "\u2713", "\u2717", "\u2713"],
-                  ["Instant eligibility check", "\u2717", "\u2717", "\u2713"],
-                  ["HMRC query support included", "\u2717 billed extra", "\u2713", "\u2713"],
-                  ["Built by SEIS fund founders", "\u2717", "\u2717", "\u2713"],
-                  ["Money-back guarantee", "\u2717", "\u2717", "\u2713"],
-                ].map(([label, a, b, c]) => (
-                  <tr key={label} className="border-b border-[#f5f5f2]">
-                    <td className="py-4 px-4 text-[#444]">{label}</td>
-                    <td className={`py-4 px-4 text-center font-medium ${a === "\u2717" || a.includes("\u2717") ? "text-[#ddd]" : "text-[#ccc]"}`}>{a}</td>
-                    <td className={`py-4 px-4 text-center font-medium ${b === "\u2713" ? "text-[#0d7a5f]" : "text-[#ddd]"}`}>{b}</td>
-                    <td className={`py-4 px-4 text-center font-medium ${c === "\u2713" || c.startsWith("\u00A3") ? "text-[#0d7a5f]" : "text-[#ddd]"}`}>{c}</td>
+                {vsRows.map((row) => (
+                  <tr key={row.label} className="border-b border-[#f5f5f2]">
+                    <td className="py-4 px-4 text-[#444]">{row.label}</td>
+                    <td className={`py-4 px-4 text-center font-medium ${row.a.includes("✗") ? "text-[#ddd]" : "text-[#ccc]"}`}>{row.a}</td>
+                    <td className={`py-4 px-4 text-center font-medium ${row.b === "✓" ? "text-[#0d7a5f]" : "text-[#ddd]"}`}>{row.b}</td>
+                    <td className="py-4 px-4 text-center font-medium text-[#0d7a5f]">{row.c}</td>
                   </tr>
                 ))}
               </tbody>
@@ -243,29 +260,12 @@ export default function Home() {
           <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Pricing</p>
           <h2 className="font-serif text-[clamp(30px,3.5vw,46px)] leading-tight tracking-tight mb-2">Simple. Flat. No surprises.</h2>
           <p className="text-base text-[#666] mb-10 font-light">Pay once per application. No subscriptions, ever.</p>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              {
-                name: "SEIS only", price: "99", featured: false,
-                features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "SEIS1 form completion", "Investor certificates (SEIS3)", "HMRC query support", "Money-back guarantee"],
-              },
-              {
-                name: "SEIS and EIS", price: "179", featured: true,
-                features: ["Everything in SEIS", "EIS advance assurance", "EIS1 form completion", "Investor certificates (EIS3)", "HMRC query support (both)", "Compliance tracking (3 years)", "Money-back guarantee"],
-              },
-              {
-                name: "EIS only", price: "149", featured: false,
-                features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "EIS1 form completion", "Investor certificates (EIS3)", "HMRC query support", "Money-back guarantee"],
-              },
-            ].map((plan) => (
-              <div
-                key={plan.name}
-                className={`bg-white rounded-xl p-7 relative ${plan.featured ? "border-2 border-[#0d7a5f]" : "border border-[#e8e8e4]"}`}
-              >
+            {plans.map((plan) => (
+              <div key={plan.name} className={`bg-white rounded-xl p-7 relative ${plan.featured ? "border-2 border-[#0d7a5f]" : "border border-[#e8e8e4]"}`}>
                 {plan.featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0d7a5f] text-white text-[11px] font-medium px-4 py-1 rounded-full whitespace-nowrap">
-                    Most popular
+                    Best value
                   </div>
                 )}
                 <div className="text-sm font-medium text-[#555] mb-2">{plan.name}</div>
@@ -276,7 +276,7 @@ export default function Home() {
                 <ul className="space-y-2.5 mb-7">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2 items-start text-sm text-[#555]">
-                      <span className="text-[#0d7a5f] font-semibold flex-shrink-0 mt-0.5">&check;</span>
+                      <span className="text-[#0d7a5f] font-semibold flex-shrink-0 mt-0.5">&#10003;</span>
                       {f}
                     </li>
                   ))}
@@ -297,20 +297,14 @@ export default function Home() {
         <div className="max-w-2xl mx-auto">
           <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">FAQ</p>
           <h2 className="font-serif text-[clamp(30px,3.5vw,46px)] leading-tight tracking-tight mb-8">Questions we get asked</h2>
-
           <div className="divide-y divide-[#f0f0ec]">
             {faqs.map((faq, i) => (
               <div key={i} className="border-t border-[#f0f0ec] first:border-t">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex justify-between items-center py-5 text-left"
-                >
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex justify-between items-center py-5 text-left">
                   <span className="text-sm font-medium text-[#1a1a18] pr-4">{faq.q}</span>
                   <span className={`text-[#aaa] text-xl flex-shrink-0 transition-transform duration-200 ${openFaq === i ? "rotate-45" : ""}`}>+</span>
                 </button>
-                {openFaq === i && (
-                  <div className="pb-5 text-sm text-[#666] leading-relaxed">{faq.a}</div>
-                )}
+                {openFaq === i && <div className="pb-5 text-sm text-[#666] leading-relaxed">{faq.a}</div>}
               </div>
             ))}
           </div>
@@ -319,10 +313,10 @@ export default function Home() {
 
       {/* FINAL CTA */}
       <section className="bg-[#0a5c47] px-6 py-24 text-center">
-        <h2 className="font-serif text-[clamp(36px,5vw,60px)] text-white leading-tight tracking-tight mb-4">
-          Need SEIS or EIS<br />advance assurance?<br />
-          <em className="text-[#5DCAA5]">Seisly done.</em>
+        <h2 className="font-serif text-[clamp(36px,5vw,60px)] text-white leading-tight tracking-tight mb-2">
+          Need SEIS or EIS<br />advance assurance?
         </h2>
+        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. &pound;79.</p>
         <p className="text-base text-[#9FE1CB] mb-8 font-light">
           Join the founders who skipped the lawyers and accountants,<br className="hidden sm:block" /> saved thousands, and got investor-ready faster.
         </p>
@@ -337,9 +331,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="bg-[#111] px-6 py-10 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <div className="font-serif text-xl text-white">
-            Seis<span className="text-[#5DCAA5]">ly</span>
-          </div>
+          <div className="font-serif text-xl text-white">Seis<span className="text-[#5DCAA5]">ly</span></div>
           <div className="text-[11px] text-[#444] mt-0.5">Seisly done.</div>
         </div>
         <p className="text-xs text-[#555]">Not a law firm or accountancy practice. Not affiliated with HMRC or SeedLegals.</p>
