@@ -155,7 +155,9 @@ export default function EligibilityPage() {
   const [answers, setAnswers] = useState<Answers>({});
   const [disqualified, setDisqualified] = useState<{ message: string; scheme: string } | null>(null);
   const [email, setEmail] = useState("");
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const getQuestions = (): Question[] => {
     if (scheme === "seis") return seisQuestions;
@@ -187,6 +189,32 @@ export default function EligibilityPage() {
     }
   };
 
+  const handleEmailSubmit = async (source: string) => {
+    if (!email || !email.includes("@")) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    setEmailError("");
+    setEmailSubmitting(true);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, scheme: scheme || undefined, source }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmailSubmitted(true);
+      } else {
+        setEmailError("Something went wrong. Please try again.");
+      }
+    } catch {
+      setEmailError("Something went wrong. Please try again.");
+    } finally {
+      setEmailSubmitting(false);
+    }
+  };
+
   const restart = () => {
     setStep("scheme");
     setScheme(null);
@@ -195,11 +223,43 @@ export default function EligibilityPage() {
     setDisqualified(null);
     setEmail("");
     setEmailSubmitted(false);
+    setEmailError("");
   };
 
   const qualified = !disqualified;
   const schemeLabel = scheme === "seis" ? "SEIS" : scheme === "eis" ? "EIS" : "SEIS and EIS";
   const schemeTitle = scheme === "seis" ? "SEIS advance assurance" : scheme === "eis" ? "EIS advance assurance" : "SEIS and EIS advance assurance";
+
+  const EmailCapture = ({ source }: { source: string }) => (
+    <div>
+      {!emailSubmitted ? (
+        <div>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit(source)}
+              className="flex-1 border border-[#e8e8e4] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white"
+            />
+            <button
+              onClick={() => handleEmailSubmit(source)}
+              disabled={emailSubmitting}
+              className="bg-[#0d7a5f] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50"
+            >
+              {emailSubmitting ? "..." : "Notify me"}
+            </button>
+          </div>
+          {emailError && <p className="text-xs text-[#e55] mt-2">{emailError}</p>}
+        </div>
+      ) : (
+        <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-lg px-4 py-3 text-sm text-[#0a5c47] font-medium">
+          You are on the list. We will be in touch very soon.
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
@@ -308,26 +368,27 @@ export default function EligibilityPage() {
                   <em className="text-[#0d7a5f]">for {schemeLabel}.</em>
                 </h2>
                 <p className="text-sm text-[#666] leading-relaxed mb-8">
-                  Based on your answers, your company appears to meet the qualifying conditions for {schemeLabel} advance assurance. The next step is to prepare and submit your application to HMRC.
+                  Based on your answers, your company appears to meet the qualifying conditions for {schemeLabel} advance assurance. The full application is coming very soon. Leave your email and you will be first to know when it is ready.
                 </p>
-                <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6 mb-8">
-                  <p className="text-sm font-medium text-[#0a5c47] mb-1">What happens next</p>
-                  <p className="text-sm text-[#555] leading-relaxed">
-                    Seisly will prepare your full advance assurance application, including the HMRC covering letter and all supporting forms. Once you submit, HMRC typically responds within 4 to 8 weeks.
-                  </p>
-                </div>
+
                 <div className="border border-[#e8e8e4] rounded-xl p-6 bg-white mb-6">
                   <p className="text-sm font-medium mb-1">{schemeTitle}</p>
                   <div className="flex items-baseline gap-2 mb-1">
                     <span className="font-serif text-4xl">&pound;{scheme ? PRICES[scheme] : "79"}</span>
                     <span className="text-sm text-[#aaa]">one-time payment</span>
                   </div>
-                  <p className="text-xs text-[#aaa] mb-4">No subscription. No hidden fees.</p>
-                  <button className="w-full bg-[#0d7a5f] text-white py-3.5 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
-                    Start my application &rarr;
-                  </button>
-                  <p className="text-xs text-[#aaa] text-center mt-3">Money-back guarantee if rejected due to our error</p>
+                  <p className="text-xs text-[#aaa] mb-5">No subscription. No hidden fees. Money-back guarantee if rejected due to our error.</p>
+                  <p className="text-sm font-medium text-[#1a1a18] mb-3">Get early access</p>
+                  <EmailCapture source="eligibility_qualified" />
                 </div>
+
+                <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5 mb-6">
+                  <p className="text-sm font-medium text-[#0a5c47] mb-1">What happens next</p>
+                  <p className="text-sm text-[#555] leading-relaxed">
+                    We will prepare your full advance assurance application, including the HMRC covering letter and all supporting forms. Once you submit, HMRC typically responds within 4 to 8 weeks.
+                  </p>
+                </div>
+
                 <button onClick={restart} className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2">
                   Start again
                 </button>
@@ -344,36 +405,15 @@ export default function EligibilityPage() {
                   <p className="text-sm text-[#c44] leading-relaxed">{disqualified?.message}</p>
                 </div>
                 <p className="text-sm text-[#666] leading-relaxed mb-8">
-                  This does not necessarily mean you cannot apply. HMRC rules have nuances and some situations have exceptions. Unlike other services that refer complex cases elsewhere, our founder has spent over a decade working through situations exactly like this.
+                  This does not necessarily mean you cannot apply. HMRC rules have nuances and some situations have exceptions. Our founder has spent over a decade working through situations exactly like this. Leave your email and we will review your situation personally.
                 </p>
-                {!emailSubmitted ? (
-                  <div className="border border-[#e8e8e4] rounded-xl p-6 bg-white mb-6">
-                    <p className="text-sm font-medium mb-1">Get personalised advice</p>
-                    <p className="text-sm text-[#666] mb-4 leading-relaxed">
-                      Leave your email and our founder will review your situation personally and let you know if there is a path forward.
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        type="email"
-                        placeholder="your@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1 border border-[#e8e8e4] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white"
-                      />
-                      <button
-                        onClick={() => setEmailSubmitted(true)}
-                        className="bg-[#0d7a5f] text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6 mb-6 text-center">
-                    <p className="text-sm font-medium text-[#0a5c47] mb-1">Got it</p>
-                    <p className="text-sm text-[#555]">We will be in touch shortly to review your situation personally.</p>
-                  </div>
-                )}
+                <div className="border border-[#e8e8e4] rounded-xl p-6 bg-white mb-6">
+                  <p className="text-sm font-medium mb-1">Get personalised advice</p>
+                  <p className="text-sm text-[#666] mb-4 leading-relaxed">
+                    Leave your email and our founder will review your situation personally and let you know if there is a path forward.
+                  </p>
+                  <EmailCapture source="eligibility_disqualified" />
+                </div>
                 <button onClick={restart} className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2">
                   Start again
                 </button>
