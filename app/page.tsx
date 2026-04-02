@@ -9,7 +9,7 @@ export default function Home() {
   const faqs = [
     {
       q: "Is Seisly providing legal or tax advice?",
-      a: "No. Seisly is a document preparation and guidance tool, not a law firm or accountancy practice. We help you prepare and submit your application correctly. If you have complex tax or legal questions, we will tell you when you need a specialist.",
+      a: "No. Seisly is a document preparation and guidance tool, not a law firm or accountancy practice. We help you prepare and submit your application correctly. That said, as part of GoLitigo we have access to experienced professionals and lawyers through our Expert Adviser Network, who work on more affordable rates and fixed fees than most high street and city firms. If you need specialist advice, we can put you in touch.",
     },
     {
       q: "What if HMRC rejects my application?",
@@ -63,7 +63,7 @@ export default function Home() {
   ];
 
   const steps = [
-    { n: 1, title: "Check your eligibility", desc: "Answer a few questions about your company and we check you against all HMRC qualifying conditions for SEIS and EIS. Free, instant, and no account needed.", tag: "Takes 5 minutes" },
+    { n: 1, title: "Check your eligibility", desc: "Answer a few questions about your company and we check you against all HMRC qualifying conditions for SEIS and EIS. Free, instant, and no account needed.", tag: "Takes 2 minutes" },
     { n: 2, title: "Tell us about your raise", desc: "How much are you raising, from how many investors, and on what terms. We use this to complete your application correctly first time.", tag: "No jargon, plain English throughout" },
     { n: 3, title: "We draft your application", desc: "Our AI generates your full advance assurance submission, including the covering letter HMRC expects, built from over a decade of real applications.", tag: "AI-powered, expert-trained" },
     { n: 4, title: "Review, approve, submit", desc: "Read through your application, make any tweaks, and submit directly to HMRC's SEIS and EIS team. We track the status and alert you to any updates.", tag: "HMRC turnaround: 4 to 8 weeks" },
@@ -71,7 +71,7 @@ export default function Home() {
   ];
 
   const features = [
-    { icon: "⚡", title: "Instant eligibility check", desc: "Know in 5 minutes whether you qualify, before you spend a penny." },
+    { icon: "⚡", title: "Instant eligibility check", desc: "Know in 2 minutes whether you qualify, before you spend a penny." },
     { icon: "✍️", title: "AI advance assurance letter", desc: "A proper covering letter drafted to HMRC's expectations, trained on a decade of real applications." },
     { icon: "📋", title: "SEIS1 and EIS1 forms", desc: "All required HMRC forms completed and formatted correctly. Nothing left blank." },
     { icon: "📄", title: "Investor certificates", desc: "SEIS3 and EIS3 certificates generated automatically once HMRC approves and shares are issued." },
@@ -121,7 +121,7 @@ export default function Home() {
         <div className="flex gap-3 justify-center flex-wrap mb-3">
           <Link href="/eligibility">
             <button className="bg-[#0d7a5f] text-white font-medium px-8 py-4 rounded-lg text-sm hover:bg-[#0a5c47] transition-all hover:-translate-y-px">
-              Check my eligibility &mdash; it&apos;s free &rarr;
+              Check my eligibility, it&apos;s free &rarr;
             </button>
           </Link>
           <a href="#how">
@@ -130,14 +130,14 @@ export default function Home() {
             </button>
           </a>
         </div>
-        <p className="text-xs text-[#aaa]">Takes 5 minutes. No account needed.</p>
+        <p className="text-xs text-[#aaa]">Takes 2 minutes. No account needed.</p>
       </section>
 
       {/* PRICE COMPARISON */}
       <section className="px-6 pb-16 max-w-2xl mx-auto">
         <div className="bg-white border border-[#e8e8e4] rounded-2xl p-8">
           <p className="text-[11px] text-[#aaa] uppercase tracking-widest text-center mb-6">
-            SEIS advance assurance &mdash; what others charge
+            SEIS advance assurance: what others charge
           </p>
           <div className="grid grid-cols-3 gap-px bg-[#e8e8e4] rounded-xl overflow-hidden">
             <div className="bg-white p-5 text-center">
@@ -170,10 +170,10 @@ export default function Home() {
         <div className="max-w-2xl mx-auto">
           <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-5">Why trust us</p>
           <blockquote className="font-serif text-[clamp(20px,2.5vw,28px)] text-white leading-relaxed italic mb-6">
-            &ldquo;Built by the founder of the UK&apos;s first SEIS fund in 2012. Not an AI consultancy that built this as a side project. Someone who has sat on both sides of the table: as the fund writing the cheques, and as the person helping founders get ready to receive them.&rdquo;
+            &ldquo;Built by the founder of the first SEIS fund on the market in 2012. Not an AI consultancy that built this as a side project. Someone who has sat on all sides of the table: as the fund deploying the investment, as the person helping founders get ready to receive them, and as a founder raising money himself. Someone who has never, not even once, had an application not sail through first time.&rdquo;
           </blockquote>
           <p className="text-sm text-[#888] leading-relaxed">
-            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for a form-filling exercise never made sense. Seisly fixes that. And because we have spent over a decade doing this for real, we handle the complex cases that other tools cannot.
+            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for a form-filling exercise never made sense. Seisly fixes that. And as part of GoLitigo, when you need a specialist, we have one.
           </p>
         </div>
       </section>
@@ -322,10 +322,10 @@ export default function Home() {
         </p>
         <Link href="/eligibility">
           <button className="bg-white text-[#0a5c47] font-medium px-10 py-4 rounded-lg text-base hover:-translate-y-0.5 transition-transform">
-            Check my eligibility &mdash; it&apos;s free &rarr;
+            Check my eligibility, it&apos;s free &rarr;
           </button>
         </Link>
-        <p className="text-xs text-[#5DCAA5] mt-4">Takes 5 minutes. No credit card needed to check eligibility.</p>
+        <p className="text-xs text-[#5DCAA5] mt-4">Takes 2 minutes. No credit card needed to check eligibility.</p>
       </section>
 
       {/* FOOTER */}

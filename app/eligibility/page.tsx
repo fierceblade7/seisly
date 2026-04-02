@@ -29,7 +29,7 @@ const seisQuestions: Question[] = [
   },
   {
     id: "not_listed",
-    question: "Is your company unquoted — not listed on any recognised stock exchange?",
+    question: "Is your company unquoted and not listed on any recognised stock exchange?",
     hint: "AIM and similar markets count as recognised exchanges.",
     disqualifies: "both",
     disqualifyOn: "no",
@@ -37,7 +37,7 @@ const seisQuestions: Question[] = [
   },
   {
     id: "not_controlled",
-    question: "Is your company independent — not a subsidiary or controlled by another company?",
+    question: "Is your company independent and not a subsidiary or controlled by another company?",
     hint: "Another company must not own more than 50% of your shares.",
     disqualifies: "both",
     disqualifyOn: "no",
@@ -54,7 +54,7 @@ const seisQuestions: Question[] = [
   {
     id: "uk_establishment",
     question: "Does your company have a permanent establishment in the UK?",
-    hint: "This means a fixed place of business in the UK — an office, premises, or similar.",
+    hint: "This means a fixed place of business in the UK such as an office or premises.",
     disqualifies: "both",
     disqualifyOn: "no",
     disqualifyMessage: "Your company must have a permanent establishment in the UK.",
@@ -253,7 +253,7 @@ export default function EligibilityPage() {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-[#aaa] mt-8 text-center">No account needed. Takes about 5 minutes.</p>
+            <p className="text-xs text-[#aaa] mt-8 text-center">No account needed. Takes about 2 minutes.</p>
           </div>
         )}
 

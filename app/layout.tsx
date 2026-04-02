@@ -16,13 +16,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Seisly - Need SEIS or EIS advance assurance? Seisly done.",
+  title: "Seisly: Need SEIS or EIS advance assurance? Seisly done.",
   description:
-    "Go from idea to HMRC-ready SEIS or EIS advance assurance application in under an hour. No lawyers. No accountants. No monthly plans. Just \u00A399.",
+    "Go from idea to HMRC-ready SEIS or EIS advance assurance application in under an hour. No lawyers. No accountants. No monthly plans. Just £99.",
   keywords: "SEIS, EIS, advance assurance, HMRC, startup funding, UK startup",
   openGraph: {
-    title: "Seisly - Seisly done.",
-    description: "SEIS or EIS advance assurance from \u00A399. Built by the founder of the UK's first SEIS fund.",
+    title: "Seisly: Seisly done.",
+    description: "SEIS or EIS advance assurance from £99. Built by the founder of the UK's first SEIS fund.",
     url: "https://seisly.com",
     siteName: "Seisly",
     locale: "en_GB",
