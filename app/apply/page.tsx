@@ -79,10 +79,89 @@ export default function ApplyPage() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [showErrors, setShowErrors] = useState(false);
+
   const set = (field: keyof ApplicationData, value: unknown) => {
     setData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: "" }));
   };
+
+  const validateStep = (s: number, d: ApplicationData): Record<string, string> => {
+    const e: Record<string, string> = {};
+    if (s === 1) {
+      if (!d.companyName.trim()) e.companyName = "Please select your company from Companies House.";
+      if (!d.companyNumber.trim()) e.companyNumber = "Company number is required.";
+      if (!d.utr.trim()) e.utr = "UTR is required.";
+      else if (!/^\d{10}$/.test(d.utr.trim())) e.utr = "UTR must be exactly 10 digits.";
+      if (!d.incorporatedAt) e.incorporatedAt = "Date of incorporation is required.";
+      if (!d.email.trim()) e.email = "Email address is required.";
+      else if (!/^[^@]+@[^@]+\.[^@]+$/.test(d.email.trim())) e.email = "Please enter a valid email address.";
+      if (!d.scheme) e.scheme = "Please select a scheme.";
+    }
+    if (s === 2) {
+      if ((d.scheme === "eis" || d.scheme === "both") && d.isKic === null) e.isKic = "Please select Yes or No.";
+      if (d.isKic === true && !d.kickReason) e.kickReason = "Please select a reason.";
+      if (!d.riskToCapital.trim()) e.riskToCapital = "Risk to capital is required.";
+      else if (d.riskToCapital.trim().length < 100) e.riskToCapital = `Minimum 100 characters required (${d.riskToCapital.trim().length}/100).`;
+    }
+    if (s === 3) {
+      if (!d.qualifyingActivity) e.qualifyingActivity = "Please select a qualifying activity.";
+      if (d.qualifyingActivity === "trade" && d.tradeStarted === null) e.tradeStarted = "Please select Yes or No.";
+      if (d.qualifyingActivity === "trade" && d.tradeStarted === true && !d.tradeStartDate) e.tradeStartDate = "Trade start date is required.";
+      if (!d.tradeDescription.trim()) e.tradeDescription = "Trade description is required.";
+      else if (d.tradeDescription.trim().length < 50) e.tradeDescription = `Minimum 50 characters required (${d.tradeDescription.trim().length}/50).`;
+    }
+    if (s === 4) {
+      if (d.previousVcs === null) e.previousVcs = "Please select Yes or No.";
+      if (d.previousVcs === true && d.previousVcsTypes.length === 0) e.previousVcsTypes = "Please select at least one type.";
+    }
+    if (s === 5) {
+      const amt = Number(d.raisingAmount.replace(/,/g, ""));
+      if (!d.raisingAmount.trim()) e.raisingAmount = "Amount is required.";
+      else if (isNaN(amt) || amt <= 0) e.raisingAmount = "Please enter a valid positive amount.";
+      else if (d.scheme === "seis" && amt > 250000) e.raisingAmount = "SEIS maximum is £250,000.";
+      else if (d.scheme === "eis" && amt > 5000000) e.raisingAmount = "EIS maximum is £5,000,000.";
+      if (!d.sharePurpose.trim()) e.sharePurpose = "Purpose of issuing shares is required.";
+      else if (d.sharePurpose.trim().length < 50) e.sharePurpose = `Minimum 50 characters required (${d.sharePurpose.trim().length}/50).`;
+      if (d.previousVcs === false) {
+        d.proposedInvestors.forEach((inv, i) => {
+          if (!inv.name.trim()) e[`investor_${i}_name`] = "Investor name is required.";
+          if (!inv.address.trim()) e[`investor_${i}_address`] = "Investor address is required.";
+          if (!inv.amount.trim()) e[`investor_${i}_amount`] = "Investment amount is required.";
+        });
+      }
+    }
+    if (s === 6) {
+      if (!d.shareClass.trim()) e.shareClass = "Share class is required.";
+      if (d.preferentialRights === null) e.preferentialRights = "Please select Yes or No.";
+      if (d.preferentialRights === true && !d.preferentialRightsDetail.trim()) e.preferentialRightsDetail = "Please describe the preferential rights.";
+      if ((d.scheme === "eis" || d.scheme === "both") && !d.withinInitialPeriod) e.withinInitialPeriod = "Please select an option.";
+    }
+    if (s === 7) {
+      if (d.hasSubsidiaries === null) e.hasSubsidiaries = "Please select Yes or No.";
+      if (!d.grossAssetsBefore) e.grossAssetsBefore = "Please select a gross assets range.";
+      if ((d.scheme === "eis" || d.scheme === "both") && !d.grossAssetsAfter) e.grossAssetsAfter = "Please select a gross assets range.";
+      if (!d.employeeCount.trim()) e.employeeCount = "Employee count is required.";
+      else if (isNaN(Number(d.employeeCount)) || Number(d.employeeCount) <= 0 || !Number.isInteger(Number(d.employeeCount))) e.employeeCount = "Please enter a positive whole number.";
+    }
+    if (s === 8) {
+      if (d.ukIncorporated === null) e.ukIncorporated = "Please select Yes or No.";
+      if (d.ukIncorporated === true) {
+        if (!d.registeredAddress.line1.trim()) e["registeredAddress.line1"] = "Address line 1 is required.";
+        if (!d.registeredAddress.postcode.trim()) e["registeredAddress.postcode"] = "Postcode is required.";
+      }
+      if (d.ukIncorporated === false) {
+        if (!d.ukEstablishmentAddress.line1.trim()) e["ukEstablishmentAddress.line1"] = "Address line 1 is required.";
+        if (!d.ukEstablishmentAddress.postcode.trim()) e["ukEstablishmentAddress.postcode"] = "Postcode is required.";
+        if (!d.establishmentNarrative.trim()) e.establishmentNarrative = "Please explain how the company meets the permanent establishment requirement.";
+      }
+    }
+    return e;
+  };
+
+  const currentErrors = validateStep(step, data);
+  const errorCount = Object.keys(currentErrors).length;
+  const isValid = errorCount === 0;
 
   const progress = Math.round(((step - 1) / (STEPS.length - 1)) * 100);
 
@@ -102,14 +181,31 @@ export default function ApplyPage() {
   };
 
   const next = async () => {
+    setShowErrors(true);
+    const errs = validateStep(step, data);
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      const firstErr = document.querySelector("[data-error]");
+      if (firstErr) firstErr.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setShowErrors(false);
     await saveProgress();
     setStep(s => Math.min(s + 1, STEPS.length));
     window.scrollTo(0, 0);
   };
 
   const back = () => {
+    setShowErrors(false);
+    setErrors({});
     setStep(s => Math.max(s - 1, 1));
     window.scrollTo(0, 0);
+  };
+
+  const Err = ({ field }: { field: string }) => {
+    const msg = showErrors ? (errors[field] || currentErrors[field]) : null;
+    if (!msg) return null;
+    return <p data-error className="text-xs text-[#e55] mt-1.5">{msg}</p>;
   };
 
   const inputClass = "w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white";
@@ -118,7 +214,7 @@ export default function ApplyPage() {
   const hintClass = "text-xs text-[#888] mt-1.5 leading-relaxed";
   const fieldClass = "mb-6";
 
-  const Step1CompanyDetails = ({ data, set, fieldClass, labelClass, inputClass, hintClass, SectionHeading }: {
+  const Step1CompanyDetails = ({ data, set, fieldClass, labelClass, inputClass, hintClass, SectionHeading, Err }: {
     data: ApplicationData;
     set: (field: keyof ApplicationData, value: unknown) => void;
     fieldClass: string;
@@ -126,6 +222,7 @@ export default function ApplyPage() {
     inputClass: string;
     hintClass: string;
     SectionHeading: React.FC<{ title: string; subtitle?: string }>;
+    Err: React.FC<{ field: string }>;
   }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<Array<{
@@ -254,27 +351,32 @@ export default function ApplyPage() {
             </div>
           )}
           <p className={hintClass}>Search by company name. We will fill in the details from Companies House.</p>
+          <Err field="companyName" />
         </div>
 
         <div className={fieldClass}>
           <label className={labelClass}>Company registration number</label>
           <input className={inputClass} value={data.companyNumber} onChange={e => set("companyNumber", e.target.value)} placeholder="12345678" maxLength={8} />
           <p className={hintClass}>8 characters. Find it on Companies House if you are not sure.</p>
+          <Err field="companyNumber" />
         </div>
         <div className={fieldClass}>
           <label className={labelClass}>Corporation Tax Unique Taxpayer Reference (UTR)</label>
           <input className={inputClass} value={data.utr} onChange={e => set("utr", e.target.value)} placeholder="1234567890" maxLength={10} />
           <p className={hintClass}>10 digits. Found on letters from HMRC about Corporation Tax.</p>
+          <Err field="utr" />
         </div>
         <div className={fieldClass}>
           <label className={labelClass}>Date of incorporation</label>
           <input className={inputClass} type="date" value={data.incorporatedAt} onChange={e => set("incorporatedAt", e.target.value)} />
           <p className={hintClass}>This is on your Companies House records.</p>
+          <Err field="incorporatedAt" />
         </div>
         <div className={fieldClass}>
           <label className={labelClass}>Your email address</label>
           <input className={inputClass} type="email" value={data.email} onChange={e => set("email", e.target.value)} placeholder="you@yourcompany.com" />
           <p className={hintClass}>We will send your application confirmation and HMRC updates here.</p>
+          <Err field="email" />
         </div>
         <div className={fieldClass}>
           <label className={labelClass}>Which scheme are you applying for?</label>
@@ -290,6 +392,7 @@ export default function ApplyPage() {
               </button>
             ))}
           </div>
+          <Err field="scheme" />
         </div>
       </div>
     );
@@ -361,6 +464,7 @@ export default function ApplyPage() {
             inputClass={inputClass}
             hintClass={hintClass}
             SectionHeading={SectionHeading}
+            Err={Err}
           />
         )}
 
@@ -376,6 +480,7 @@ export default function ApplyPage() {
                 <label className={labelClass}>Is your company applying as a knowledge-intensive company (KIC)?</label>
                 <YesNo field="isKic" value={data.isKic} />
                 <p className={hintClass}>KICs can use an extended 10-year age limit and higher funding limits. Most companies answer No.</p>
+                <Err field="isKic" />
               </div>
             )}
             {data.isKic && (
@@ -389,6 +494,7 @@ export default function ApplyPage() {
                     </button>
                   ))}
                 </div>
+                <Err field="kickReason" />
               </div>
             )}
             <div className={fieldClass}>
@@ -398,6 +504,7 @@ export default function ApplyPage() {
                 onChange={e => set("riskToCapital", e.target.value)}
                 placeholder="Example: The company aims to grow its SaaS platform to 10,000 paying customers within 3 years, scaling from current revenue of £50,000 ARR. The business plan projects headcount growth from 3 to 15 employees. Investor capital is at risk as the company is pre-profitability and dependent on continued product development and sales execution..." />
               <p className={hintClass}>Be specific. Reference your business plan. HMRC will check this carefully.</p>
+              <Err field="riskToCapital" />
             </div>
           </div>
         )}
@@ -423,18 +530,21 @@ export default function ApplyPage() {
                   <p className="text-xs text-[#888] mt-0.5">R&D intended to lead to a qualifying trade</p>
                 </button>
               </div>
+              <Err field="qualifyingActivity" />
             </div>
             {data.qualifyingActivity === "trade" && (
               <>
                 <div className={fieldClass}>
                   <label className={labelClass}>Has the trade started yet?</label>
                   <YesNo field="tradeStarted" value={data.tradeStarted} />
+                  <Err field="tradeStarted" />
                 </div>
                 {data.tradeStarted && (
                   <div className={fieldClass}>
                     <label className={labelClass}>When did the trade start?</label>
                     <input className={inputClass} type="date" value={data.tradeStartDate} onChange={e => set("tradeStartDate", e.target.value)} />
                     <p className={hintClass}>For SEIS, the trade must have started less than 3 years before the date of share issue.</p>
+                    <Err field="tradeStartDate" />
                   </div>
                 )}
                 <div className={fieldClass}>
@@ -445,6 +555,7 @@ export default function ApplyPage() {
                       ? "Include how the company makes its money and the types of customers it has..."
                       : "Include how the company intends to make its money and the types of customers it will have..."} />
                   <p className={hintClass}>Be specific about the revenue model and customer types. If there is more than one trade in the group, describe the trade for which money is being raised.</p>
+                  <Err field="tradeDescription" />
                 </div>
               </>
             )}
@@ -454,6 +565,7 @@ export default function ApplyPage() {
                 <textarea className={textareaClass} rows={5} value={data.tradeDescription}
                   onChange={e => set("tradeDescription", e.target.value)}
                   placeholder="Describe the R&D activity and the qualifying trade it is intended to lead to..." />
+                <Err field="tradeDescription" />
               </div>
             )}
           </div>
@@ -470,6 +582,7 @@ export default function ApplyPage() {
               <label className={labelClass}>Has the company ever had venture capital scheme investments or State aid before?</label>
               <p className="text-xs text-[#666] mb-3">This includes SEIS, EIS, VCT or SITR investment, or any de minimis State aid or risk finance investment.</p>
               <YesNo field="previousVcs" value={data.previousVcs} />
+              <Err field="previousVcs" />
             </div>
             {data.previousVcs && (
               <div className={fieldClass}>
@@ -487,6 +600,7 @@ export default function ApplyPage() {
                     );
                   })}
                 </div>
+                <Err field="previousVcsTypes" />
               </div>
             )}
           </div>
@@ -511,12 +625,14 @@ export default function ApplyPage() {
                 {data.scheme === "both" && "Maximum £250,000 for SEIS, £5,000,000 for EIS."}
                 {" "}This must reconcile with your business plan and financial forecasts.
               </p>
+              <Err field="raisingAmount" />
             </div>
             <div className={fieldClass}>
               <label className={labelClass}>What is the purpose of issuing the shares?</label>
               <textarea className={textareaClass} rows={5} value={data.sharePurpose}
                 onChange={e => set("sharePurpose", e.target.value)}
                 placeholder="Include details of what the company will spend the money raised on. For example: product development (£60,000), sales and marketing (£50,000), hiring two engineers (£40,000)..." />
+              <Err field="sharePurpose" />
             </div>
 
             {/* Proposed investor list — only shown if no previous VCS investment */}
@@ -543,12 +659,14 @@ export default function ApplyPage() {
                             updated[i] = { ...updated[i], name: e.target.value };
                             set("proposedInvestors", updated);
                           }} />
+                        <Err field={`investor_${i}_name`} />
                         <input className={inputClass} placeholder="Full address" value={investor.address}
                           onChange={e => {
                             const updated = [...data.proposedInvestors];
                             updated[i] = { ...updated[i], address: e.target.value };
                             set("proposedInvestors", updated);
                           }} />
+                        <Err field={`investor_${i}_address`} />
                         <div className="relative">
                           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#888]">£</span>
                           <input className={`${inputClass} pl-8`} placeholder="Amount invested" value={investor.amount}
@@ -558,6 +676,7 @@ export default function ApplyPage() {
                               set("proposedInvestors", updated);
                             }} />
                         </div>
+                        <Err field={`investor_${i}_amount`} />
                       </div>
                     </div>
                   ))}
@@ -582,11 +701,13 @@ export default function ApplyPage() {
             <div className={fieldClass}>
               <label className={labelClass}>Which class of shares will be issued?</label>
               <input className={inputClass} value={data.shareClass} onChange={e => set("shareClass", e.target.value)} placeholder="e.g. Ordinary shares" />
+              <Err field="shareClass" />
             </div>
             <div className={fieldClass}>
               <label className={labelClass}>Are there any preferential rights attached to this class of shares?</label>
               <YesNo field="preferentialRights" value={data.preferentialRights} />
               <p className={hintClass}>SEIS and EIS shares must generally be ordinary shares without preferential rights to qualify.</p>
+              <Err field="preferentialRights" />
             </div>
             {data.preferentialRights && (
               <div className={fieldClass}>
@@ -594,6 +715,7 @@ export default function ApplyPage() {
                 <textarea className={textareaClass} rows={4} value={data.preferentialRightsDetail}
                   onChange={e => set("preferentialRightsDetail", e.target.value)}
                   placeholder="Refer to the company's articles of association and describe the preferential rights attached to this share class..." />
+                <Err field="preferentialRightsDetail" />
               </div>
             )}
             {(data.scheme === "eis" || data.scheme === "both") && (
@@ -608,6 +730,7 @@ export default function ApplyPage() {
                   ))}
                 </div>
                 <p className={hintClass}>Within 7 years of first commercial sale for standard companies, 10 years for knowledge-intensive companies.</p>
+                <Err field="withinInitialPeriod" />
               </div>
             )}
           </div>
@@ -623,6 +746,7 @@ export default function ApplyPage() {
             <div className={fieldClass}>
               <label className={labelClass}>Does the company have any subsidiaries?</label>
               <YesNo field="hasSubsidiaries" value={data.hasSubsidiaries} />
+              <Err field="hasSubsidiaries" />
               {data.hasSubsidiaries && (
                 <div className="mt-3 bg-[#fff8e6] border border-[#f5d88a] rounded-lg p-3">
                   <p className="text-xs text-[#8a6500] leading-relaxed">You will need to upload a business structure diagram showing all companies, when they were incorporated, your shareholding in each, and what their trade is. You can do this in the document upload step.</p>
@@ -647,6 +771,7 @@ export default function ApplyPage() {
                   </button>
                 ))}
               </div>
+              <Err field="grossAssetsBefore" />
             </div>
             {(data.scheme === "eis" || data.scheme === "both") && (
               <div className={fieldClass}>
@@ -659,6 +784,7 @@ export default function ApplyPage() {
                     </button>
                   ))}
                 </div>
+                <Err field="grossAssetsAfter" />
               </div>
             )}
             <div className={fieldClass}>
@@ -670,6 +796,7 @@ export default function ApplyPage() {
                 {data.scheme === "eis" && " Fewer than 250 required for EIS."}
                 {data.scheme === "both" && " Fewer than 25 for SEIS, fewer than 250 for EIS."}
               </p>
+              <Err field="employeeCount" />
             </div>
           </div>
         )}
@@ -684,15 +811,22 @@ export default function ApplyPage() {
             <div className={fieldClass}>
               <label className={labelClass}>Was the company incorporated in the UK?</label>
               <YesNo field="ukIncorporated" value={data.ukIncorporated} />
+              <Err field="ukIncorporated" />
             </div>
             {data.ukIncorporated && (
               <div className={fieldClass}>
                 <label className={labelClass}>Registered business address</label>
                 <div className="space-y-3">
-                  <input className={inputClass} placeholder="Address line 1" value={data.registeredAddress.line1} onChange={e => set("registeredAddress", { ...data.registeredAddress, line1: e.target.value })} />
+                  <div>
+                    <input className={inputClass} placeholder="Address line 1" value={data.registeredAddress.line1} onChange={e => set("registeredAddress", { ...data.registeredAddress, line1: e.target.value })} />
+                    <Err field="registeredAddress.line1" />
+                  </div>
                   <input className={inputClass} placeholder="Address line 2 (optional)" value={data.registeredAddress.line2} onChange={e => set("registeredAddress", { ...data.registeredAddress, line2: e.target.value })} />
                   <input className={inputClass} placeholder="Town or city" value={data.registeredAddress.city} onChange={e => set("registeredAddress", { ...data.registeredAddress, city: e.target.value })} />
-                  <input className={inputClass} placeholder="Postcode" value={data.registeredAddress.postcode} onChange={e => set("registeredAddress", { ...data.registeredAddress, postcode: e.target.value })} />
+                  <div>
+                    <input className={inputClass} placeholder="Postcode" value={data.registeredAddress.postcode} onChange={e => set("registeredAddress", { ...data.registeredAddress, postcode: e.target.value })} />
+                    <Err field="registeredAddress.postcode" />
+                  </div>
                 </div>
               </div>
             )}
@@ -701,10 +835,16 @@ export default function ApplyPage() {
                 <div className={fieldClass}>
                   <label className={labelClass}>Permanent UK establishment address</label>
                   <div className="space-y-3">
-                    <input className={inputClass} placeholder="Address line 1" value={data.ukEstablishmentAddress.line1} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, line1: e.target.value })} />
+                    <div>
+                      <input className={inputClass} placeholder="Address line 1" value={data.ukEstablishmentAddress.line1} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, line1: e.target.value })} />
+                      <Err field="ukEstablishmentAddress.line1" />
+                    </div>
                     <input className={inputClass} placeholder="Address line 2 (optional)" value={data.ukEstablishmentAddress.line2} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, line2: e.target.value })} />
                     <input className={inputClass} placeholder="Town or city" value={data.ukEstablishmentAddress.city} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, city: e.target.value })} />
-                    <input className={inputClass} placeholder="Postcode" value={data.ukEstablishmentAddress.postcode} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, postcode: e.target.value })} />
+                    <div>
+                      <input className={inputClass} placeholder="Postcode" value={data.ukEstablishmentAddress.postcode} onChange={e => set("ukEstablishmentAddress", { ...data.ukEstablishmentAddress, postcode: e.target.value })} />
+                      <Err field="ukEstablishmentAddress.postcode" />
+                    </div>
                   </div>
                 </div>
                 <div className={fieldClass}>
@@ -712,6 +852,7 @@ export default function ApplyPage() {
                   <textarea className={textareaClass} rows={4} value={data.establishmentNarrative}
                     onChange={e => set("establishmentNarrative", e.target.value)}
                     placeholder="Explain how the company has a fixed place of business in the UK..." />
+                  <Err field="establishmentNarrative" />
                 </div>
               </>
             )}
@@ -771,19 +912,35 @@ export default function ApplyPage() {
         )}
 
         {/* NAVIGATION */}
-        <div className="flex justify-between items-center mt-10 pt-6 border-t border-[#f0f0ec]">
-          {step > 1 ? (
-            <button onClick={back} className="text-sm text-[#666] hover:text-[#1a1a18] transition-colors">
-              &larr; Back
-            </button>
-          ) : (
-            <div />
+        <div className="mt-10 pt-6 border-t border-[#f0f0ec]">
+          {step < STEPS.length && showErrors && errorCount > 0 && (
+            <p className="text-xs text-[#e55] mb-3 text-right">{errorCount} {errorCount === 1 ? "field" : "fields"} still needed</p>
           )}
-          {step < STEPS.length && (
-            <button onClick={next} className="bg-[#0d7a5f] text-white px-8 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
-              Continue &rarr;
-            </button>
+          {step < STEPS.length && !showErrors && errorCount > 0 && (
+            <p className="text-xs text-[#aaa] mb-3 text-right">{errorCount} {errorCount === 1 ? "field" : "fields"} still needed</p>
           )}
+          <div className="flex justify-between items-center">
+            {step > 1 ? (
+              <button onClick={back} className="text-sm text-[#666] hover:text-[#1a1a18] transition-colors">
+                &larr; Back
+              </button>
+            ) : (
+              <div />
+            )}
+            {step < STEPS.length && (
+              <button
+                onClick={next}
+                disabled={showErrors && !isValid}
+                className={`px-8 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  showErrors && !isValid
+                    ? "bg-[#ccc] text-white cursor-not-allowed"
+                    : "bg-[#0d7a5f] text-white hover:bg-[#0a5c47]"
+                }`}
+              >
+                Continue &rarr;
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
