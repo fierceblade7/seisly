@@ -3,6 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const Logo = () => (
+  <svg width="160" height="42" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
+    <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
+    <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
+    <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
+  </svg>
+);
+
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
@@ -84,10 +93,9 @@ export default function Home() {
 
       {/* NAV */}
       <nav className="sticky top-0 z-50 bg-[#fafaf8]/90 backdrop-blur-md border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between">
-        <div>
-          <div className="font-serif text-2xl tracking-tight">Seis<span className="text-[#0d7a5f]">ly</span></div>
-          <div className="text-[11px] text-[#aaa] tracking-wide -mt-0.5">Seisly done.</div>
-        </div>
+        <Link href="/">
+          <Logo />
+        </Link>
         <div className="flex items-center gap-6">
           <a href="#how" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">How it works</a>
           <a href="#pricing" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">Pricing</a>
