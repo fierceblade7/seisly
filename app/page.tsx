@@ -169,9 +169,9 @@ export default function Home() {
       <section className="bg-[#1a1a18] px-6 py-16 text-center">
         <div className="max-w-2xl mx-auto">
           <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-5">Why trust us</p>
-          <blockquote className="font-serif text-[clamp(20px,2.5vw,28px)] text-white leading-relaxed italic mb-6">
-            &ldquo;Built by the founder of the first SEIS fund on the market in 2012. Not an AI consultancy that built this as a side project. Someone who has sat on all sides of the table: as the fund deploying the investment, as the person helping founders get ready to receive them, and as a founder raising money himself. Someone who has never, not even once, had an application not sail through first time.&rdquo;
-          </blockquote>
+          <p className="font-serif text-[clamp(20px,2.5vw,28px)] text-white leading-relaxed italic mb-6">
+            Built by the founder of the first SEIS fund on the market in 2012. Someone who has sat on all sides of the table: as the fund deploying investment, as the adviser helping founders get investor ready, and as a founder raising himself. Someone who has never, not even once, had an application not sail through first time.
+          </p>
           <p className="text-sm text-[#888] leading-relaxed">
             <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for a form-filling exercise never made sense. Seisly fixes that. And as part of GoLitigo, when you need a specialist, we have one.
           </p>
