@@ -158,7 +158,7 @@ export default function Home() {
           <div className="bg-white p-5 text-center">
             <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Solicitor</div>
             <div className="text-sm font-medium text-[#555] mb-3">Avg. professional fee</div>
-            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">&pound;2,000+</div>
+            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">~&pound;2,000+</div>
             <div className="text-[11px] text-[#aaa] mt-1">+ VAT</div>
           </div>
           <div className="bg-white p-5 text-center">
@@ -175,7 +175,7 @@ export default function Home() {
           </div>
         </div>
         <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
-          Save over &pound;250 vs online legal platforms. Save over &pound;1,800 vs a solicitor.
+          Save over &pound;250 vs online legal platforms. Save over &pound;1,800 vs a solicitor or accountant.
         </p>
       </section>
 
