@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -12,7 +12,7 @@ const Logo = () => (
   </svg>
 );
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const params = useSearchParams();
   const sessionId = params.get("session_id");
   const [verified, setVerified] = useState(false);
@@ -137,5 +137,17 @@ export default function SuccessPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
+        <p className="text-sm text-[#888]">Loading...</p>
+      </div>
+    }>
+      <SuccessPageContent />
+    </Suspense>
   );
 }
