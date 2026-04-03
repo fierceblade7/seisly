@@ -145,7 +145,7 @@ export default function Home() {
       {/* PRICE COMPARISON — BAND 1 */}
       <section className="px-6 pb-8 max-w-3xl mx-auto">
         <p className="text-[11px] text-[#aaa] uppercase tracking-widest text-center mb-6">
-          SEIS advance assurance — what you actually pay
+          SEIS advance assurance, what you actually pay
         </p>
         <div className="grid grid-cols-3 gap-px bg-[#e8e8e4] rounded-xl overflow-hidden border border-[#e8e8e4]">
           <div className="bg-white p-5 text-center">
@@ -402,8 +402,20 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between gap-8 mb-8">
             <div className="max-w-sm">
-              <div className="font-serif text-xl text-white mb-3">
-                Seis<span className="text-[#5DCAA5]">ly</span>
+              <div>
+                <div className="font-serif text-xl text-white">
+                  Seis<span className="text-[#5DCAA5]">ly</span>
+                </div>
+                <a
+                  href="https://www.golitigo.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#555] hover:text-[#888] transition-colors"
+                >
+                  <p className="text-[10px] uppercase tracking-[0.15em] font-sans mt-0.5">
+                    BY GOLITIGO
+                  </p>
+                </a>
               </div>
               <p className="text-xs text-[#666] leading-relaxed">
                 Seisly is a product of Litigo Limited, a technology company. We are not a law firm or tax adviser and nothing on this site constitutes legal or tax advice. For advice specific to your circumstances, consult a qualified solicitor or accountant.

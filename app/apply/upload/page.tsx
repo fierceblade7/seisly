@@ -98,13 +98,14 @@ export default function UploadPage() {
   const handleSubmit = async () => {
     if (!allRequiredUploaded) return;
     setSubmitting(true);
+    const effectiveScheme = scheme || 'seis';
     try {
       await fetch("/api/application/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          scheme,
+          scheme: effectiveScheme,
           documents_uploaded_at: new Date().toISOString(),
           status: "documents_uploaded",
         }),
@@ -112,6 +113,18 @@ export default function UploadPage() {
     } catch (e) {
       console.error(e);
     }
+
+    // Trigger AI review in background
+    try {
+      await fetch("/api/review/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, scheme: effectiveScheme }),
+      })
+    } catch (e) {
+      console.error('Failed to start review:', e)
+    }
+
     setSubmitted(true);
     setSubmitting(false);
   };
@@ -126,7 +139,7 @@ export default function UploadPage() {
           <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-8">&#10003;</div>
           <h1 className="font-serif text-4xl tracking-tight mb-4">Documents received.</h1>
           <p className="text-sm text-[#666] leading-relaxed mb-8">
-            We are now reviewing your documents and application. We will email you at <strong>{email}</strong> within 24 hours with your complete draft application for review and approval before we submit to HMRC.
+            We are now reviewing your documents and application. We will email you at <strong>{email}</strong> within 5 to 10 minutes with your review results. Once you have approved the review we will prepare your final HMRC submission.
           </p>
           <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5 text-left">
             <p className="text-sm font-medium text-[#0a5c47] mb-3">What happens next</p>
@@ -145,6 +158,13 @@ export default function UploadPage() {
                 </li>
               ))}
             </ul>
+          </div>
+          <div className="mt-6">
+            <Link href={`/apply/review?email=${encodeURIComponent(email)}&scheme=${scheme}`}>
+              <button className="w-full border border-[#0d7a5f] text-[#0d7a5f] py-3 rounded-lg text-sm font-medium hover:bg-[#f0faf6] transition-colors">
+                View review progress
+              </button>
+            </Link>
           </div>
         </div>
       </div>

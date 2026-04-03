@@ -497,7 +497,7 @@ export default function ApplyPage() {
 
         {process.env.NODE_ENV === 'development' && (
           <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
-            <p className="text-xs text-[#8a6500]">Dev mode — test data available</p>
+            <p className="text-xs text-[#8a6500]">Dev mode - test data available</p>
             <button
               onClick={() => {
                 setData({
@@ -953,7 +953,7 @@ export default function ApplyPage() {
           <div>
             {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("payment") === "cancelled" && (
               <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-6">
-                <p className="text-sm text-[#8a6500]">Your payment was cancelled. Your application has been saved — you can complete payment when you are ready.</p>
+                <p className="text-sm text-[#8a6500]">Your payment was cancelled. Your application has been saved. You can complete payment when you are ready.</p>
               </div>
             )}
             <SectionHeading
