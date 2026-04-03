@@ -144,6 +144,28 @@ const eisOnlyQuestions: Question[] = [
   },
 ];
 
+// Non-disqualifying questions that flag complexity
+const complexityQuestions: Question[] = [
+  {
+    id: "has_previous_vcs",
+    question: "Has the company previously received any SEIS, EIS, VCT, or SITR investment?",
+    hint: "This includes any venture capital scheme investment or risk finance State aid the company has received before.",
+    disqualifyOn: "no", // never disqualifies
+  },
+  {
+    id: "claims_kic",
+    question: "Is the company applying as a Knowledge Intensive Company (KIC)?",
+    hint: "KICs can use extended age limits (10 years instead of 7) and higher funding limits. Most companies are not KICs.",
+    disqualifyOn: "no",
+  },
+  {
+    id: "non_uk_operations",
+    question: "Does the company have significant operations, subsidiaries, or investors outside the UK?",
+    hint: "For example, overseas subsidiaries, non-UK resident directors, or the majority of investors based outside the UK.",
+    disqualifyOn: "no",
+  },
+];
+
 type Scheme = "seis" | "eis" | "both";
 
 const PRICES: Record<Scheme, string> = { seis: "149", eis: "149", both: "199" };
@@ -158,12 +180,27 @@ export default function EligibilityPage() {
   const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [complexSubmitting, setComplexSubmitting] = useState(false);
+  const [complexSubmitted, setComplexSubmitted] = useState(false);
 
   const getQuestions = (): Question[] => {
-    if (scheme === "seis") return seisQuestions;
-    if (scheme === "eis") return [...seisQuestions.slice(0, 5), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
-    return [...seisQuestions, ...eisOnlyQuestions];
+    let qs: Question[];
+    if (scheme === "seis") qs = seisQuestions;
+    else if (scheme === "eis") qs = [...seisQuestions.slice(0, 5), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
+    else qs = [...seisQuestions, ...eisOnlyQuestions];
+    // Add complexity detection questions at the end
+    return [...qs, ...complexityQuestions];
   };
+
+  const getComplexityFlags = (): string[] => {
+    const flags: string[] = [];
+    if (answers.has_previous_vcs === "yes") flags.push("Previous VCS investment");
+    if (answers.claims_kic === "yes") flags.push("Knowledge Intensive Company (KIC)");
+    if (answers.non_uk_operations === "yes") flags.push("Non-UK operations or investors");
+    return flags;
+  };
+
+  const isComplex = getComplexityFlags().length > 0;
 
   const questions = getQuestions();
   const progress = step === "scheme" ? 0 : step === "result" ? 100 : Math.round((currentQ / questions.length) * 100);
@@ -224,6 +261,38 @@ export default function EligibilityPage() {
     setEmail("");
     setEmailSubmitted(false);
     setEmailError("");
+    setComplexSubmitting(false);
+    setComplexSubmitted(false);
+  };
+
+  const handleComplexSubmit = async () => {
+    if (!email || !email.includes("@")) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    setEmailError("");
+    setComplexSubmitting(true);
+    try {
+      const res = await fetch("/api/complex-case", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          scheme: scheme || undefined,
+          complexityFlags: getComplexityFlags(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setComplexSubmitted(true);
+      } else {
+        setEmailError("Something went wrong. Please try again.");
+      }
+    } catch {
+      setEmailError("Something went wrong. Please try again.");
+    } finally {
+      setComplexSubmitting(false);
+    }
   };
 
   const qualified = !disqualified;
@@ -362,7 +431,66 @@ export default function EligibilityPage() {
         {/* STEP 3: RESULT */}
         {step === "result" && (
           <div>
-            {qualified ? (
+            {qualified && isComplex ? (
+              /* COMPLEX CASE — qualified but flagged */
+              <div>
+                <div className="w-12 h-12 rounded-full bg-[#fff8e6] border border-[#f5d88a] flex items-center justify-center text-xl mb-6">!</div>
+                <p className="text-[11px] text-[#8a6500] uppercase tracking-widest font-medium mb-3">Nearly there</p>
+                <h2 className="font-serif text-4xl tracking-tight mb-4">
+                  Your case needs<br />
+                  <em className="text-[#8a6500]">a quick review.</em>
+                </h2>
+                <p className="text-sm text-[#666] leading-relaxed mb-4">
+                  Your company may well qualify but your application has some complexity we want to review before giving you a price. Leave your email and we will come back to you within 24 hours.
+                </p>
+
+                <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-6">
+                  <p className="text-xs font-medium text-[#8a6500] mb-2">Complexity flags detected:</p>
+                  <ul className="space-y-1">
+                    {getComplexityFlags().map((flag, i) => (
+                      <li key={i} className="text-xs text-[#8a6500] flex gap-2">
+                        <span>-</span> {flag}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="border border-[#e8e8e4] rounded-xl p-6 bg-white mb-6">
+                  {!complexSubmitted ? (
+                    <div>
+                      <p className="text-sm font-medium mb-3">Leave your details and we will review your case</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          placeholder="your@email.com"
+                          value={email}
+                          onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleComplexSubmit()}
+                          className="flex-1 border border-[#e8e8e4] rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white"
+                        />
+                        <button
+                          onClick={handleComplexSubmit}
+                          disabled={complexSubmitting}
+                          className="bg-[#0d7a5f] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50"
+                        >
+                          {complexSubmitting ? "..." : "Get in touch"}
+                        </button>
+                      </div>
+                      {emailError && <p className="text-xs text-[#e55] mt-2">{emailError}</p>}
+                    </div>
+                  ) : (
+                    <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-lg px-4 py-3 text-sm text-[#0a5c47] font-medium">
+                      Thank you. We will review your case and get back to you within 24 hours.
+                    </div>
+                  )}
+                </div>
+
+                <button onClick={restart} className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2">
+                  Start again
+                </button>
+              </div>
+            ) : qualified ? (
+              /* STANDARD PASS */
               <div>
                 <div className="w-12 h-12 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-xl mb-6">&#10003;</div>
                 <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Good news</p>
