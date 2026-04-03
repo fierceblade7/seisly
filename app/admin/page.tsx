@@ -1,3 +1,13 @@
+// SECURITY REMINDER: Before going live, ensure MFA is
+// enabled on all admin accounts:
+// - Supabase dashboard
+// - Vercel dashboard
+// - Stripe dashboard
+// - Resend dashboard
+// - GitHub repository
+// - Anthropic console
+// Last reviewed: April 2026
+
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
