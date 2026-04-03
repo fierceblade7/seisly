@@ -94,9 +94,9 @@ export default function SuccessPage() {
 
         <div className="bg-[#1a1a18] rounded-xl p-6 mb-6 text-left">
           <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-3">Seisly customer perk</p>
-          <h3 className="font-serif text-xl text-white mb-2">Find investors faster with Novar</h3>
+          <h3 className="font-serif text-xl text-white mb-2">Find investors faster with <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar</a></h3>
           <p className="text-sm text-[#888] leading-relaxed mb-4">
-            As a Seisly customer you get Novar for Startups at £49/month instead of the usual £59/month. Novar finds investors and customers - the best source of non-dilutive finance there is.
+            As a Seisly customer you get <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar for Startups</a> at £49/month instead of the usual £59/month. <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar</a> finds investors and customers - the best source of non-dilutive finance there is.
           </p>
           <div className="bg-[#2a2a28] rounded-lg p-4 mb-4 flex items-center justify-between">
             <div>
@@ -121,7 +121,7 @@ export default function SuccessPage() {
               </button>
             )}
           </div>
-          <a href="https://novar.ai" target="_blank" rel="noopener noreferrer"
+          <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer"
             className="block text-center bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
             Get Novar for Startups &rarr;
           </a>

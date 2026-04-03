@@ -43,11 +43,11 @@ export default function Home() {
   ];
 
   const vsRows = [
-    { label: "SEIS advance assurance", a: "£2,000+ + VAT", b: "£390 + VAT + subscription", c: "£149 + VAT" },
-    { label: "EIS advance assurance", a: "£2,500+ + VAT", b: "£390 + VAT + subscription", c: "£149 + VAT" },
-    { label: "SEIS and EIS together", a: "£3,000+ + VAT", b: "£780 + VAT + subscription", c: "£199 + VAT" },
-    { label: "Compliance statement (SEIS/EIS)", a: "£1,500+ + VAT", b: "£490+ + VAT", c: "£399 + VAT (coming soon)" },
-    { label: "Investor finder (Boost equivalent)", a: "Not offered", b: "£590 + VAT", c: "£49/mo (Novar)" },
+    { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
+    { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
+    { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£199 + VAT" },
+    { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 + VAT (coming soon)" },
+    { label: "Investor finder tool", a: "Not offered", b: "~£600 + VAT", c: <span>£49/mo (<a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="hover:underline">Novar</a>)</span> },
     { label: "Investor certificates included", a: "✗", b: "✓", c: "✓" },
     { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
     { label: "Instant eligibility check", a: "✗", b: "✓", c: "✓" },
@@ -120,7 +120,7 @@ export default function Home() {
           <em className="text-[#0d7a5f] not-italic font-serif">Seisly done.</em>
         </h1>
         <p className="font-serif text-[clamp(24px,3vw,36px)] text-[#1a1a18] mb-6 tracking-tight">
-          &pound;149. Not &pound;2,000.
+          From &pound;149 + VAT. Not &pound;2,000.
         </p>
         <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
           HMRC-ready in under an hour.{" "}
@@ -155,10 +155,10 @@ export default function Home() {
             <div className="text-[11px] text-[#aaa] mt-1">+ VAT</div>
           </div>
           <div className="bg-white p-5 text-center">
-            <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">SeedLegals</div>
+            <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Online legal platforms</div>
             <div className="text-sm font-medium text-[#555] mb-3">AA + subscription</div>
-            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">&pound;390+</div>
-            <div className="text-[11px] text-[#aaa] mt-1">+ VAT + £75/mo subscription</div>
+            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">~&pound;400</div>
+            <div className="text-[11px] text-[#aaa] mt-1">+ VAT + subscription required</div>
           </div>
           <div className="bg-[#f0faf6] p-5 text-center">
             <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; Seisly</div>
@@ -168,7 +168,7 @@ export default function Home() {
           </div>
         </div>
         <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
-          Save over &pound;300 vs SeedLegals advance assurance alone. Save over &pound;1,800 vs a solicitor.
+          Save over &pound;250 vs online legal platforms. Save over &pound;1,800 vs a solicitor.
         </p>
       </section>
 
@@ -180,12 +180,12 @@ export default function Home() {
         <h3 className="font-serif text-2xl text-center tracking-tight mb-6">The full investor-ready package</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
-            <div className="text-sm font-medium text-[#555] mb-4">SeedLegals equivalent</div>
+            <div className="text-sm font-medium text-[#555] mb-4">Online legal platform equivalent</div>
             <ul className="space-y-2 mb-6">
               {[
-                ["SEIS advance assurance", "£390 + VAT"],
-                ["Access subscription (6 months)", "£450 + VAT"],
-                ["Boost — find investors", "£590 + VAT"],
+                ["SEIS advance assurance", "~£400 + VAT"],
+                ["Access subscription (6 months)", "~£450 + VAT"],
+                ["Investor finder tool", "~£600 + VAT"],
               ].map(([label, price]) => (
                 <li key={label} className="flex justify-between text-sm">
                   <span className="text-[#666]">{label}</span>
@@ -195,22 +195,24 @@ export default function Home() {
             </ul>
             <div className="border-t border-[#f0f0ec] pt-4 flex justify-between items-baseline">
               <span className="text-sm font-medium">Total</span>
-              <span className="font-serif text-2xl text-[#1a1a18]">&pound;1,430 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
+              <span className="font-serif text-2xl text-[#1a1a18]">~&pound;1,450 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
             </div>
           </div>
           <div className="bg-[#f0faf6] border border-[#0d7a5f] rounded-xl p-6">
-            <div className="text-sm font-medium text-[#0d7a5f] mb-4">Seisly + Novar for Startups</div>
+            <div className="text-sm font-medium text-[#0d7a5f] mb-4">Seisly + <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="hover:underline">Novar for Startups</a></div>
             <ul className="space-y-2 mb-6">
-              {[
-                ["SEIS advance assurance", "£149 + VAT"],
-                ["Novar for Startups", "£49/mo + VAT"],
-                ["(usual price £59/mo — Seisly discount)", ""],
-              ].map(([label, price]) => (
-                <li key={label} className="flex justify-between text-sm">
-                  <span className={label.startsWith("(") ? "text-[#0d7a5f] text-xs italic" : "text-[#666]"}>{label}</span>
-                  <span className="font-medium text-[#0d7a5f]">{price}</span>
-                </li>
-              ))}
+              <li className="flex justify-between text-sm">
+                <span className="text-[#666]">SEIS advance assurance</span>
+                <span className="font-medium text-[#0d7a5f]">£149 + VAT</span>
+              </li>
+              <li className="flex justify-between text-sm">
+                <span className="text-[#666]"><a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a></span>
+                <span className="font-medium text-[#0d7a5f]">£49/mo + VAT</span>
+              </li>
+              <li className="flex justify-between text-sm">
+                <span className="text-[#0d7a5f] text-xs italic">(usual price £59/mo - Seisly discount)</span>
+                <span className="font-medium text-[#0d7a5f]"></span>
+              </li>
             </ul>
             <div className="border-t border-[#c0e8db] pt-4 flex justify-between items-baseline">
               <span className="text-sm font-medium text-[#0a5c47]">Total</span>
@@ -222,10 +224,10 @@ export default function Home() {
           </div>
         </div>
         <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
-          Get investor-ready AND start finding investors. Save over £1,280 vs SeedLegals.
+          Get investor-ready AND start finding investors. Save over £1,300 vs online legal platforms.
         </p>
         <p className="text-center text-xs text-[#aaa] mt-2">
-          Novar for Startups finds investors and customers — the best non-dilutive finance there is.
+          <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a> finds investors and customers - the best non-dilutive finance there is.
         </p>
       </section>
 
@@ -299,7 +301,7 @@ export default function Home() {
                 <tr className="border-b-2 border-[#f0f0ec]">
                   <th className="text-left py-3 px-4 text-[11px] text-[#aaa] uppercase tracking-wide font-medium"></th>
                   <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">Lawyers and accountants</th>
-                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">SeedLegals</th>
+                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">Online legal platforms</th>
                   <th className="text-center py-3 px-4 text-[13px] text-[#0d7a5f] font-medium">Seisly &#10022;</th>
                 </tr>
               </thead>
@@ -353,6 +355,9 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-center text-[#aaa] mt-4">
+            Non-UK companies add £100. Nominee structures coming soon.
+          </p>
         </div>
       </section>
 
