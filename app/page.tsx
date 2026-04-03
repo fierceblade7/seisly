@@ -43,30 +43,31 @@ export default function Home() {
   ];
 
   const vsRows = [
-    { label: "SEIS advance assurance", a: "£2,000+", b: "£399 + plan", c: "£79" },
-    { label: "EIS advance assurance", a: "£2,500+", b: "£799 + plan", c: "£129" },
-    { label: "SEIS and EIS together", a: "£3,000+", b: "£999 + plan", c: "£149" },
+    { label: "SEIS advance assurance", a: "£2,000+ + VAT", b: "£390 + VAT + subscription", c: "£149 + VAT" },
+    { label: "EIS advance assurance", a: "£2,500+ + VAT", b: "£390 + VAT + subscription", c: "£149 + VAT" },
+    { label: "SEIS and EIS together", a: "£3,000+ + VAT", b: "£780 + VAT + subscription", c: "£199 + VAT" },
+    { label: "Compliance statement (SEIS/EIS)", a: "£1,500+ + VAT", b: "£490+ + VAT", c: "£399 + VAT (coming soon)" },
+    { label: "Investor finder (Boost equivalent)", a: "Not offered", b: "£590 + VAT", c: "£49/mo (Novar)" },
     { label: "Investor certificates included", a: "✗", b: "✓", c: "✓" },
     { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
     { label: "Instant eligibility check", a: "✗", b: "✓", c: "✓" },
     { label: "Complex cases handled", a: "✓", b: "✗", c: "✓" },
     { label: "HMRC query support included", a: "✗ billed extra", b: "✗", c: "✓" },
-    { label: "Compliance tracking included", a: "✗", b: "✗", c: "✓" },
     { label: "Built by SEIS fund founders", a: "✗", b: "✗", c: "✓" },
     { label: "Money-back guarantee", a: "✗", b: "✗", c: "✓" },
   ];
 
   const plans = [
     {
-      name: "SEIS only", price: "79", featured: false,
+      name: "SEIS only", price: "149", featured: false,
       features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "SEIS1 form completion", "Investor certificates (SEIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
     },
     {
-      name: "SEIS and EIS", price: "149", featured: true,
+      name: "SEIS and EIS", price: "199", featured: true,
       features: ["Everything in SEIS", "EIS advance assurance", "EIS1 form completion", "Investor certificates (EIS3)", "HMRC query support (both)", "Compliance tracking (3 years)", "Complex cases handled", "Money-back guarantee"],
     },
     {
-      name: "EIS only", price: "129", featured: false,
+      name: "EIS only", price: "149", featured: false,
       features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "EIS1 form completion", "Investor certificates (EIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
     },
   ];
@@ -119,7 +120,7 @@ export default function Home() {
           <em className="text-[#0d7a5f] not-italic font-serif">Seisly done.</em>
         </h1>
         <p className="font-serif text-[clamp(24px,3vw,36px)] text-[#1a1a18] mb-6 tracking-tight">
-          &pound;79. Not &pound;2,000.
+          &pound;149. Not &pound;2,000.
         </p>
         <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
           HMRC-ready in under an hour.{" "}
@@ -141,36 +142,91 @@ export default function Home() {
         <p className="text-xs text-[#aaa]">Takes 2 minutes. No account needed.</p>
       </section>
 
-      {/* PRICE COMPARISON */}
-      <section className="px-6 pb-16 max-w-2xl mx-auto">
-        <div className="bg-white border border-[#e8e8e4] rounded-2xl p-8">
-          <p className="text-[11px] text-[#aaa] uppercase tracking-widest text-center mb-6">
-            SEIS advance assurance: what others charge
-          </p>
-          <div className="grid grid-cols-3 gap-px bg-[#e8e8e4] rounded-xl overflow-hidden">
-            <div className="bg-white p-5 text-center">
-              <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Professional fees</div>
-              <div className="text-sm font-medium text-[#555] mb-3">Lawyers and accountants</div>
-              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;2,000+</div>
-              <div className="text-[11px] text-[#aaa] mt-1">avg. professional fee</div>
-            </div>
-            <div className="bg-white p-5 text-center">
-              <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Platform</div>
-              <div className="text-sm font-medium text-[#555] mb-3">SeedLegals</div>
-              <div className="font-serif text-[34px] text-[#1a1a18] leading-none">&pound;399+</div>
-              <div className="text-[11px] text-[#aaa] mt-1">+ monthly subscription</div>
-            </div>
-            <div className="bg-[#f0faf6] p-5 text-center">
-              <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; This is us</div>
-              <div className="text-sm font-medium text-[#0d7a5f] mb-3">Seisly</div>
-              <div className="font-serif text-[34px] text-[#0d7a5f] leading-none">&pound;79</div>
-              <div className="text-[11px] text-[#aaa] mt-1">one-time. all-in. done.</div>
+      {/* PRICE COMPARISON — BAND 1 */}
+      <section className="px-6 pb-8 max-w-3xl mx-auto">
+        <p className="text-[11px] text-[#aaa] uppercase tracking-widest text-center mb-6">
+          SEIS advance assurance — what you actually pay
+        </p>
+        <div className="grid grid-cols-3 gap-px bg-[#e8e8e4] rounded-xl overflow-hidden border border-[#e8e8e4]">
+          <div className="bg-white p-5 text-center">
+            <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">Solicitor</div>
+            <div className="text-sm font-medium text-[#555] mb-3">Avg. professional fee</div>
+            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">&pound;2,000+</div>
+            <div className="text-[11px] text-[#aaa] mt-1">+ VAT</div>
+          </div>
+          <div className="bg-white p-5 text-center">
+            <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">SeedLegals</div>
+            <div className="text-sm font-medium text-[#555] mb-3">AA + subscription</div>
+            <div className="font-serif text-[28px] text-[#1a1a18] leading-none">&pound;390+</div>
+            <div className="text-[11px] text-[#aaa] mt-1">+ VAT + £75/mo subscription</div>
+          </div>
+          <div className="bg-[#f0faf6] p-5 text-center">
+            <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; Seisly</div>
+            <div className="text-sm font-medium text-[#0d7a5f] mb-3">All-in, no subscription</div>
+            <div className="font-serif text-[28px] text-[#0d7a5f] leading-none">&pound;149</div>
+            <div className="text-[11px] text-[#aaa] mt-1">+ VAT. One-time. Done.</div>
+          </div>
+        </div>
+        <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
+          Save over &pound;300 vs SeedLegals advance assurance alone. Save over &pound;1,800 vs a solicitor.
+        </p>
+      </section>
+
+      {/* PRICE COMPARISON — BAND 2 */}
+      <section className="px-6 pb-16 max-w-3xl mx-auto">
+        <p className="text-[11px] text-[#aaa] uppercase tracking-widest text-center mb-2">
+          Want to find investors too?
+        </p>
+        <h3 className="font-serif text-2xl text-center tracking-tight mb-6">The full investor-ready package</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
+            <div className="text-sm font-medium text-[#555] mb-4">SeedLegals equivalent</div>
+            <ul className="space-y-2 mb-6">
+              {[
+                ["SEIS advance assurance", "£390 + VAT"],
+                ["Access subscription (6 months)", "£450 + VAT"],
+                ["Boost — find investors", "£590 + VAT"],
+              ].map(([label, price]) => (
+                <li key={label} className="flex justify-between text-sm">
+                  <span className="text-[#666]">{label}</span>
+                  <span className="font-medium text-[#1a1a18]">{price}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-[#f0f0ec] pt-4 flex justify-between items-baseline">
+              <span className="text-sm font-medium">Total</span>
+              <span className="font-serif text-2xl text-[#1a1a18]">&pound;1,430 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
             </div>
           </div>
-          <p className="text-center text-sm text-[#0a5c47] font-medium mt-5">
-            Save over &pound;300 vs SeedLegals. Save &pound;1,900 vs a professional.
-          </p>
+          <div className="bg-[#f0faf6] border border-[#0d7a5f] rounded-xl p-6">
+            <div className="text-sm font-medium text-[#0d7a5f] mb-4">Seisly + Novar for Startups</div>
+            <ul className="space-y-2 mb-6">
+              {[
+                ["SEIS advance assurance", "£149 + VAT"],
+                ["Novar for Startups", "£49/mo + VAT"],
+                ["(usual price £59/mo — Seisly discount)", ""],
+              ].map(([label, price]) => (
+                <li key={label} className="flex justify-between text-sm">
+                  <span className={label.startsWith("(") ? "text-[#0d7a5f] text-xs italic" : "text-[#666]"}>{label}</span>
+                  <span className="font-medium text-[#0d7a5f]">{price}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-[#c0e8db] pt-4 flex justify-between items-baseline">
+              <span className="text-sm font-medium text-[#0a5c47]">Total</span>
+              <div className="text-right">
+                <span className="font-serif text-2xl text-[#0d7a5f]">&pound;149 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
+                <p className="text-xs text-[#0d7a5f] mt-0.5">then £49/mo + VAT</p>
+              </div>
+            </div>
+          </div>
         </div>
+        <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
+          Get investor-ready AND start finding investors. Save over £1,280 vs SeedLegals.
+        </p>
+        <p className="text-center text-xs text-[#aaa] mt-2">
+          Novar for Startups finds investors and customers — the best non-dilutive finance there is.
+        </p>
       </section>
 
       {/* FOUNDER STRIP */}
@@ -280,7 +336,7 @@ export default function Home() {
                 <div className="font-serif text-[42px] leading-none mb-1">
                   <sup className="text-xl font-sans align-super">&pound;</sup>{plan.price}
                 </div>
-                <div className="text-xs text-[#aaa] mb-6">one-time payment</div>
+                <div className="text-xs text-[#aaa] mb-6">+ VAT. One-time payment.</div>
                 <ul className="space-y-2.5 mb-7">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2 items-start text-sm text-[#555]">
@@ -324,7 +380,7 @@ export default function Home() {
         <h2 className="font-serif text-[clamp(36px,5vw,60px)] text-white leading-tight tracking-tight mb-2">
           Need SEIS or EIS<br />advance assurance?
         </h2>
-        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. &pound;79.</p>
+        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. &pound;149.</p>
         <p className="text-base text-[#9FE1CB] mb-8 font-light">
           Join the founders who skipped the lawyers and accountants,<br className="hidden sm:block" /> saved thousands, and got investor-ready faster.
         </p>
