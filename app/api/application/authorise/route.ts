@@ -1,0 +1,115 @@
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+const resend = new Resend(process.env.RESEND_API_KEY!)
+
+export async function POST(request: NextRequest) {
+  try {
+    const { email, scheme, name, companyName } = await request.json()
+
+    if (!email || !scheme || !name) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Fetch application for company name
+    const { data: application } = await supabase
+      .from('applications')
+      .select('company_name, declared_by_name, declared_by_position, scheme')
+      .eq('email', email)
+      .eq('scheme', scheme)
+      .single()
+
+    await supabase
+      .from('applications')
+      .update({
+        status: 'authorised',
+        authorised_at: new Date().toISOString(),
+        authorised_by_name: name,
+        submission_requested_at: new Date().toISOString(),
+      })
+      .eq('email', email)
+      .eq('scheme', scheme)
+
+    // Notify Seisly team
+    await resend.emails.send({
+      from: 'Seisly <hello@seisly.com>',
+      to: 'support@seisly.com',
+      subject: `New application ready for submission - ${application?.company_name || companyName}`,
+      html: `
+        <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
+          <h1 style="font-size: 24px; font-weight: 400; margin-bottom: 16px;">
+            New application ready for HMRC submission
+          </h1>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr style="border-bottom: 1px solid #f0f0ec;">
+              <td style="padding: 8px 0; color: #888; width: 40%;">Company</td>
+              <td style="padding: 8px 0; font-weight: 500;">${application?.company_name || companyName}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0ec;">
+              <td style="padding: 8px 0; color: #888;">Scheme</td>
+              <td style="padding: 8px 0; font-weight: 500;">${(application?.scheme || scheme).toUpperCase()}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0ec;">
+              <td style="padding: 8px 0; color: #888;">Founder email</td>
+              <td style="padding: 8px 0;">${email}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0ec;">
+              <td style="padding: 8px 0; color: #888;">Signatory</td>
+              <td style="padding: 8px 0;">${application?.declared_by_name || name}, ${application?.declared_by_position || ''}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #888;">Authorised at</td>
+              <td style="padding: 8px 0;">${new Date().toLocaleString('en-GB')}</td>
+            </tr>
+          </table>
+          <div style="margin-top: 32px; padding: 16px; background: #f0faf6; border-radius: 8px;">
+            <p style="font-size: 13px; color: #0a5c47; margin: 0;">
+              Log into the HMRC online service and submit this application.
+              Check Supabase for the full application data.
+            </p>
+          </div>
+        </div>
+      `
+    })
+
+    // Notify founder
+    await resend.emails.send({
+      from: 'Seisly <hello@seisly.com>',
+      to: email,
+      subject: `Submission authorised - ${application?.company_name || companyName}`,
+      html: `
+        <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
+          <div style="margin-bottom: 32px;">
+            <span style="font-size: 24px; font-weight: 400;">Seis<span style="color: #0d7a5f;">ly</span></span>
+          </div>
+          <h1 style="font-size: 28px; font-weight: 400; margin-bottom: 16px;">
+            We have received your submission authorisation.
+          </h1>
+          <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 16px;">
+            Thank you, ${application?.declared_by_name || name}. We will now prepare and submit your
+            ${(application?.scheme || scheme).toUpperCase()} advance assurance application to HMRC
+            on behalf of ${application?.company_name || companyName}.
+          </p>
+          <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 32px;">
+            HMRC typically responds within 4 to 8 weeks. We will track your application
+            and notify you the moment we hear back.
+          </p>
+          <p style="font-size: 13px; color: #aaa; line-height: 1.6;">
+            Questions? Reply to this email or contact support@seisly.com<br>
+            Seisly is a product of Litigo Limited, 71-75 Shelton Street, London WC2H 9JQ.
+          </p>
+        </div>
+      `
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Authorisation error:', err)
+    return NextResponse.json({ error: 'Authorisation failed' }, { status: 500 })
+  }
+}

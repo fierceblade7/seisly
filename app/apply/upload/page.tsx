@@ -185,6 +185,10 @@ export default function UploadPage() {
           HMRC requires these documents with every advance assurance application. We will review them and check they are consistent with your application before submitting.
         </p>
 
+        <p className="text-xs text-[#888] leading-relaxed mb-6">
+          For best review results, upload documents as PDFs where possible. We also read Word and Excel files. Excel financial models are analysed by sheet, with summary and forecast sheets prioritised.
+        </p>
+
         <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-8">
           <p className="text-xs text-[#8a6500] leading-relaxed">
             Do not worry if your documents are drafts or incomplete. We will review them and let you know if anything needs strengthening before we submit to HMRC.

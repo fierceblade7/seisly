@@ -36,6 +36,14 @@ interface ApplicationData {
   registeredAddress: { line1: string; line2: string; city: string; postcode: string };
   ukEstablishmentAddress: { line1: string; line2: string; city: string; postcode: string };
   establishmentNarrative: string;
+  hasCommercialSale: boolean | null;
+  firstCommercialSaleDate: string;
+  outsidePeriodReason: string;
+  previousInvestmentAmount: string;
+  previousInvestmentDate: string;
+  newMarketDetails: string;
+  signatoryName: string;
+  signatoryPosition: string;
 }
 
 const Logo = () => (
@@ -47,17 +55,7 @@ const Logo = () => (
   </svg>
 );
 
-const STEPS = [
-  { id: 1, title: "Company details" },
-  { id: 2, title: "Scheme and risk" },
-  { id: 3, title: "Your trade" },
-  { id: 4, title: "Previous funding" },
-  { id: 5, title: "This raise" },
-  { id: 6, title: "Share structure" },
-  { id: 7, title: "Company limits" },
-  { id: 8, title: "Business address" },
-  { id: 9, title: "Review" },
-];
+// Steps are now defined as SEIS_STEPS and EIS_STEPS below the empty object
 
 const empty: ApplicationData = {
   email: "", scheme: null, companyName: "", companyNumber: "", utr: "", incorporatedAt: "",
@@ -71,7 +69,36 @@ const empty: ApplicationData = {
   registeredAddress: { line1: "", line2: "", city: "", postcode: "" },
   ukEstablishmentAddress: { line1: "", line2: "", city: "", postcode: "" },
   establishmentNarrative: "",
+  hasCommercialSale: null, firstCommercialSaleDate: "",
+  outsidePeriodReason: "", previousInvestmentAmount: "",
+  previousInvestmentDate: "", newMarketDetails: "",
+  signatoryName: "", signatoryPosition: "",
 };
+
+const SEIS_STEPS = [
+  { id: 1, title: "Company details" },
+  { id: 2, title: "Scheme and risk" },
+  { id: 3, title: "Your trade" },
+  { id: 4, title: "Previous funding" },
+  { id: 5, title: "This raise" },
+  { id: 6, title: "Share structure" },
+  { id: 7, title: "Company limits" },
+  { id: 8, title: "Business address" },
+  { id: 9, title: "Review" },
+];
+
+const EIS_STEPS = [
+  { id: 1, title: "Company details" },
+  { id: 2, title: "Scheme and risk" },
+  { id: 3, title: "Your trade" },
+  { id: 4, title: "Maximum permitted age" },
+  { id: 5, title: "Previous funding" },
+  { id: 6, title: "This raise" },
+  { id: 7, title: "Share structure" },
+  { id: 8, title: "Company limits" },
+  { id: 9, title: "Business address" },
+  { id: 10, title: "Review" },
+];
 
 const SectionHeading = ({ title, subtitle }: { title: string; subtitle?: string }) => (
   <div className="mb-8">
@@ -281,6 +308,15 @@ export default function ApplyPage() {
 
   const [showErrors, setShowErrors] = useState(false);
 
+  const isEis = data.scheme === "eis" || data.scheme === "both";
+  const steps = isEis ? EIS_STEPS : SEIS_STEPS;
+
+  // Map logical content to step numbers (EIS inserts "Maximum permitted age" at step 4)
+  const stepFor = (name: string) => {
+    const found = steps.find(s => s.title === name);
+    return found ? found.id : -1;
+  };
+
   const set = (field: keyof ApplicationData, value: unknown) => {
     setData(prev => ({ ...prev, [field]: value }));
     setErrors(prev => ({ ...prev, [field]: "" }));
@@ -288,7 +324,8 @@ export default function ApplyPage() {
 
   const validateStep = (s: number, d: ApplicationData): Record<string, string> => {
     const e: Record<string, string> = {};
-    if (s === 1) {
+    const stepTitle = steps.find(st => st.id === s)?.title;
+    if (stepTitle === "Company details") {
       if (!d.companyName.trim()) e.companyName = "Please select your company from Companies House.";
       if (!d.companyNumber.trim()) e.companyNumber = "Company number is required.";
       if (!d.utr.trim()) e.utr = "UTR is required.";
@@ -298,24 +335,40 @@ export default function ApplyPage() {
       else if (!/^[^@]+@[^@]+\.[^@]+$/.test(d.email.trim())) e.email = "Please enter a valid email address.";
       if (!d.scheme) e.scheme = "Please select a scheme.";
     }
-    if (s === 2) {
+    if (stepTitle === "Scheme and risk") {
       if ((d.scheme === "eis" || d.scheme === "both") && d.isKic === null) e.isKic = "Please select Yes or No.";
       if (d.isKic === true && !d.kickReason) e.kickReason = "Please select a reason.";
       if (!d.riskToCapital.trim()) e.riskToCapital = "Risk to capital is required.";
       else if (d.riskToCapital.trim().length < 100) e.riskToCapital = `Minimum 100 characters required (${d.riskToCapital.trim().length}/100).`;
     }
-    if (s === 3) {
+    if (stepTitle === "Your trade") {
       if (!d.qualifyingActivity) e.qualifyingActivity = "Please select a qualifying activity.";
       if (d.qualifyingActivity === "trade" && d.tradeStarted === null) e.tradeStarted = "Please select Yes or No.";
       if (d.qualifyingActivity === "trade" && d.tradeStarted === true && !d.tradeStartDate) e.tradeStartDate = "Trade start date is required.";
       if (!d.tradeDescription.trim()) e.tradeDescription = "Trade description is required.";
       else if (d.tradeDescription.trim().length < 50) e.tradeDescription = `Minimum 50 characters required (${d.tradeDescription.trim().length}/50).`;
     }
-    if (s === 4) {
+    if (stepTitle === "Maximum permitted age") {
+      if (d.hasCommercialSale === null) e.hasCommercialSale = "Please select Yes or No.";
+      if (d.hasCommercialSale === true) {
+        if (!d.firstCommercialSaleDate) e.firstCommercialSaleDate = "Date of first commercial sale is required.";
+        if (!d.withinInitialPeriod) e.withinInitialPeriod = "Please select an option.";
+        if ((d.withinInitialPeriod === "no" || d.withinInitialPeriod === "not_sure") && !d.outsidePeriodReason) e.outsidePeriodReason = "Please select a reason.";
+        if (d.outsidePeriodReason === "follow_on") {
+          if (!d.previousInvestmentAmount.trim()) e.previousInvestmentAmount = "Previous investment amount is required.";
+          if (!d.previousInvestmentDate) e.previousInvestmentDate = "Previous investment date is required.";
+        }
+        if (d.outsidePeriodReason === "new_market") {
+          if (!d.newMarketDetails.trim()) e.newMarketDetails = "New market details are required.";
+          else if (d.newMarketDetails.trim().length < 100) e.newMarketDetails = `Minimum 100 characters required (${d.newMarketDetails.trim().length}/100).`;
+        }
+      }
+    }
+    if (stepTitle === "Previous funding") {
       if (d.previousVcs === null) e.previousVcs = "Please select Yes or No.";
       if (d.previousVcs === true && d.previousVcsTypes.length === 0) e.previousVcsTypes = "Please select at least one type.";
     }
-    if (s === 5) {
+    if (stepTitle === "This raise") {
       const amt = Number(d.raisingAmount.replace(/,/g, ""));
       if (!d.raisingAmount.trim()) e.raisingAmount = "Amount is required.";
       else if (isNaN(amt) || amt <= 0) e.raisingAmount = "Please enter a valid positive amount.";
@@ -331,20 +384,21 @@ export default function ApplyPage() {
         });
       }
     }
-    if (s === 6) {
+    if (stepTitle === "Share structure") {
       if (!d.shareClass.trim()) e.shareClass = "Share class is required.";
       if (d.preferentialRights === null) e.preferentialRights = "Please select Yes or No.";
       if (d.preferentialRights === true && !d.preferentialRightsDetail.trim()) e.preferentialRightsDetail = "Please describe the preferential rights.";
-      if ((d.scheme === "eis" || d.scheme === "both") && !d.withinInitialPeriod) e.withinInitialPeriod = "Please select an option.";
     }
-    if (s === 7) {
+    if (stepTitle === "Company limits") {
       if (d.hasSubsidiaries === null) e.hasSubsidiaries = "Please select Yes or No.";
       if (!d.grossAssetsBefore) e.grossAssetsBefore = "Please select a gross assets range.";
       if ((d.scheme === "eis" || d.scheme === "both") && !d.grossAssetsAfter) e.grossAssetsAfter = "Please select a gross assets range.";
       if (!d.employeeCount.trim()) e.employeeCount = "Employee count is required.";
       else if (isNaN(Number(d.employeeCount)) || Number(d.employeeCount) <= 0 || !Number.isInteger(Number(d.employeeCount))) e.employeeCount = "Please enter a positive whole number.";
     }
-    if (s === 8) {
+    if (stepTitle === "Business address") {
+      if (!d.signatoryName.trim()) e.signatoryName = "Signatory name is required.";
+      if (!d.signatoryPosition.trim()) e.signatoryPosition = "Signatory position is required.";
       if (d.ukIncorporated === null) e.ukIncorporated = "Please select Yes or No.";
       if (d.ukIncorporated === true) {
         if (!d.registeredAddress.line1.trim()) e["registeredAddress.line1"] = "Address line 1 is required.";
@@ -363,7 +417,7 @@ export default function ApplyPage() {
   const errorCount = Object.keys(currentErrors).length;
   const isValid = errorCount === 0;
 
-  const progress = Math.round(((step - 1) / (STEPS.length - 1)) * 100);
+  const progress = Math.round(((step - 1) / (steps.length - 1)) * 100);
 
   const saveProgress = async () => {
     setSaving(true);
@@ -391,7 +445,7 @@ export default function ApplyPage() {
     }
     setShowErrors(false);
     await saveProgress();
-    setStep(s => Math.min(s + 1, STEPS.length));
+    setStep(s => Math.min(s + 1, steps.length));
     window.scrollTo(0, 0);
   };
 
@@ -470,7 +524,7 @@ export default function ApplyPage() {
       <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
         <Link href="/"><Logo /></Link>
         <div className="text-xs text-[#aaa]">
-          {saving ? "Saving..." : `Step ${step} of ${STEPS.length}`}
+          {saving ? "Saving..." : `Step ${step} of ${steps.length}`}
         </div>
       </nav>
 
@@ -482,12 +536,12 @@ export default function ApplyPage() {
       {/* STEP INDICATOR */}
       <div className="bg-white border-b border-[#e8e8e4] px-6 py-3 overflow-x-auto">
         <div className="flex gap-1 min-w-max">
-          {STEPS.map((s) => (
+          {steps.map((s) => (
             <div key={s.id} className="flex items-center gap-1">
               <div className={`text-[11px] font-medium px-3 py-1 rounded-full transition-colors ${step === s.id ? "bg-[#e8f5f1] text-[#0a5c47]" : step > s.id ? "text-[#0d7a5f]" : "text-[#ccc]"}`}>
                 {step > s.id ? "✓ " : ""}{s.title}
               </div>
-              {s.id < STEPS.length && <div className="w-4 h-px bg-[#e8e8e4]" />}
+              {s.id < steps.length && <div className="w-4 h-px bg-[#e8e8e4]" />}
             </div>
           ))}
         </div>
@@ -534,6 +588,11 @@ export default function ApplyPage() {
                   registeredAddress: { line1: "1 Test Street", line2: "", city: "London", postcode: "SW1A 1AA" },
                   ukEstablishmentAddress: { line1: "", line2: "", city: "", postcode: "" },
                   establishmentNarrative: "",
+                  hasCommercialSale: null, firstCommercialSaleDate: "",
+                  outsidePeriodReason: "", previousInvestmentAmount: "",
+                  previousInvestmentDate: "", newMarketDetails: "",
+                  signatoryName: "John Smith",
+                  signatoryPosition: "Director",
                 });
                 setStep(9);
               }}
@@ -544,8 +603,8 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 1: COMPANY DETAILS */}
-        {step === 1 && (
+        {/* STEP: COMPANY DETAILS */}
+        {step === stepFor("Company details") && (
           <Step1CompanyDetails
             data={data}
             set={set}
@@ -557,8 +616,8 @@ export default function ApplyPage() {
           />
         )}
 
-        {/* STEP 2: SCHEME AND RISK */}
-        {step === 2 && (
+        {/* STEP: SCHEME AND RISK */}
+        {step === stepFor("Scheme and risk") && (
           <div>
             <SectionHeading
               title="Scheme and risk to capital"
@@ -598,8 +657,8 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 3: QUALIFYING TRADE */}
-        {step === 3 && (
+        {/* STEP: QUALIFYING TRADE */}
+        {step === stepFor("Your trade") && (
           <div>
             <SectionHeading
               title="Your qualifying trade"
@@ -660,8 +719,96 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 4: PREVIOUS FUNDING */}
-        {step === 4 && (
+        {/* STEP: MAXIMUM PERMITTED AGE (EIS/both only) */}
+        {step === stepFor("Maximum permitted age") && (
+          <div>
+            <SectionHeading
+              title="Maximum permitted age"
+              subtitle="EIS investment must be made within the company's initial investing period, unless an exception applies."
+            />
+            <div className={fieldClass}>
+              <label className={labelClass}>Has the company made a commercial sale of a product or service?</label>
+              <p className={hintClass} style={{ marginTop: 0, marginBottom: 8 }}>This does not include limited sales to test the market. Commercial sales are anything by the company itself, a 51% subsidiary, or an acquired company.</p>
+              <YesNo field="hasCommercialSale" value={data.hasCommercialSale} />
+              <Err field="hasCommercialSale" {...errProps} />
+            </div>
+            {data.hasCommercialSale === true && (
+              <>
+                <div className={fieldClass}>
+                  <label className={labelClass}>What was the date of the first commercial sale?</label>
+                  <input className={inputClass} type="date" value={data.firstCommercialSaleDate} onChange={e => set("firstCommercialSaleDate", e.target.value)} />
+                  <p className={hintClass}>The date the company (or a 51% subsidiary) first made a commercial sale.</p>
+                  <Err field="firstCommercialSaleDate" {...errProps} />
+                </div>
+                <div className={fieldClass}>
+                  <label className={labelClass}>Will the company be within its initial investing period at the time of share issue?</label>
+                  <p className={hintClass} style={{ marginTop: 0, marginBottom: 8 }}>The initial investing period is 7 years from first commercial sale for standard companies, or 10 years for Knowledge Intensive Companies (KICs).</p>
+                  <div className="space-y-2">
+                    {[["yes", "Yes"], ["no", "No"], ["not_sure", "I am not sure"]].map(([val, label]) => (
+                      <button key={val} onClick={() => set("withinInitialPeriod", val)}
+                        className={`w-full text-left border rounded-lg p-3 text-sm transition-all ${data.withinInitialPeriod === val ? "border-[#0d7a5f] bg-[#f0faf6] text-[#0d7a5f]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <Err field="withinInitialPeriod" {...errProps} />
+                </div>
+                {(data.withinInitialPeriod === "no" || data.withinInitialPeriod === "not_sure") && (
+                  <>
+                    <div className={fieldClass}>
+                      <label className={labelClass}>What is the proposed investment for?</label>
+                      <p className={hintClass} style={{ marginTop: 0, marginBottom: 8 }}>The company is outside or approaching the end of its initial investing period. EIS investment is still possible in limited circumstances.</p>
+                      <div className="space-y-2">
+                        <button onClick={() => set("outsidePeriodReason", "follow_on")}
+                          className={`w-full text-left border rounded-lg p-4 text-sm transition-all ${data.outsidePeriodReason === "follow_on" ? "border-[#0d7a5f] bg-[#f0faf6]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
+                          <p className="font-medium">Follow-on funding</p>
+                          <p className="text-xs text-[#888] mt-0.5">Follow-on funding for a previous EIS/VCT investment made within the initial investing period</p>
+                        </button>
+                        <button onClick={() => set("outsidePeriodReason", "new_market")}
+                          className={`w-full text-left border rounded-lg p-4 text-sm transition-all ${data.outsidePeriodReason === "new_market" ? "border-[#0d7a5f] bg-[#f0faf6]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
+                          <p className="font-medium">Entering a new market</p>
+                          <p className="text-xs text-[#888] mt-0.5">Entering a new product market or new geographic market</p>
+                        </button>
+                      </div>
+                      <Err field="outsidePeriodReason" {...errProps} />
+                    </div>
+                    {data.outsidePeriodReason === "follow_on" && (
+                      <>
+                        <div className={fieldClass}>
+                          <label className={labelClass}>Amount of previous EIS or VCT investment</label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#888]">£</span>
+                            <input className={`${inputClass} pl-8`} value={data.previousInvestmentAmount} onChange={e => set("previousInvestmentAmount", e.target.value)} placeholder="100,000" />
+                          </div>
+                          <p className={hintClass}>The amount of the previous qualifying investment made within the initial investing period.</p>
+                          <Err field="previousInvestmentAmount" {...errProps} />
+                        </div>
+                        <div className={fieldClass}>
+                          <label className={labelClass}>Date of previous investment</label>
+                          <input className={inputClass} type="date" value={data.previousInvestmentDate} onChange={e => set("previousInvestmentDate", e.target.value)} />
+                          <Err field="previousInvestmentDate" {...errProps} />
+                        </div>
+                      </>
+                    )}
+                    {data.outsidePeriodReason === "new_market" && (
+                      <div className={fieldClass}>
+                        <label className={labelClass}>Details of the new market and specific activity</label>
+                        <textarea className={textareaClass} rows={6} value={data.newMarketDetails}
+                          onChange={e => set("newMarketDetails", e.target.value)}
+                          placeholder="You must reference existing operations and customers, and demonstrate clearly how the conditions of the new market are appreciably different to existing product or geographic markets..." />
+                        <p className={hintClass}>You must reference existing operations and customers, and demonstrate clearly how the conditions of the new market are appreciably different to existing product or geographic markets.</p>
+                        <Err field="newMarketDetails" {...errProps} />
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* STEP: PREVIOUS FUNDING */}
+        {step === stepFor("Previous funding") && (
           <div>
             <SectionHeading
               title="Previous funding"
@@ -695,8 +842,8 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 5: THIS RAISE */}
-        {step === 5 && (
+        {/* STEP: THIS RAISE */}
+        {step === stepFor("This raise") && (
           <div>
             <SectionHeading
               title="This raise"
@@ -780,8 +927,8 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 6: SHARE STRUCTURE */}
-        {step === 6 && (
+        {/* STEP: SHARE STRUCTURE */}
+        {step === stepFor("Share structure") && (
           <div>
             <SectionHeading
               title="Share structure"
@@ -807,26 +954,11 @@ export default function ApplyPage() {
                 <Err field="preferentialRightsDetail" {...errProps} />
               </div>
             )}
-            {(data.scheme === "eis" || data.scheme === "both") && (
-              <div className={fieldClass}>
-                <label className={labelClass}>Will the company be within its initial investing period at the time of share issue?</label>
-                <div className="space-y-2">
-                  {[["yes", "Yes"], ["no", "No"], ["unsure", "I am not sure"]].map(([val, label]) => (
-                    <button key={val} onClick={() => set("withinInitialPeriod", val)}
-                      className={`w-full text-left border rounded-lg p-3 text-sm transition-all ${data.withinInitialPeriod === val ? "border-[#0d7a5f] bg-[#f0faf6] text-[#0d7a5f]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <p className={hintClass}>Within 7 years of first commercial sale for standard companies, 10 years for knowledge-intensive companies.</p>
-                <Err field="withinInitialPeriod" {...errProps} />
-              </div>
-            )}
           </div>
         )}
 
-        {/* STEP 7: COMPANY LIMITS */}
-        {step === 7 && (
+        {/* STEP: COMPANY LIMITS */}
+        {step === stepFor("Company limits") && (
           <div>
             <SectionHeading
               title="Company limits"
@@ -845,24 +977,30 @@ export default function ApplyPage() {
             <div className={fieldClass}>
               <label className={labelClass}>What will the expected gross assets be immediately before the share issue?</label>
               <div className="space-y-2">
-                {[
-                  ["up_to_350k", "Up to £350,000", "Required for SEIS"],
-                  ["350k_to_1m", "£350,001 to £1,000,000", "EIS only"],
-                  ["1m_to_5m", "£1,000,001 to £5,000,000", "EIS only"],
-                  ["5m_to_10m", "£5,000,001 to £10,000,000", "EIS only"],
-                  ["10m_to_15m", "£10,000,001 to £15,000,000", "EIS only"],
-                  ["over_15m", "More than £15,000,000", "Does not qualify"],
-                ].map(([val, label, note]) => (
+                {(data.scheme === "seis" ? [
+                  ["up_to_350k", "Up to £350,000"],
+                  ["350k_to_1m", "£350,001 to £1,000,000"],
+                  ["1m_to_5m", "£1,000,001 to £5,000,000"],
+                  ["5m_to_10m", "£5,000,001 to £10,000,000"],
+                  ["over_10m", "More than £10,000,000"],
+                ] : [
+                  ["up_to_1m", "Up to £1,000,000"],
+                  ["1m_to_5m", "£1,000,001 to £5,000,000"],
+                  ["5m_to_10m", "£5,000,001 to £10,000,000"],
+                  ["10m_to_15m", "£10,000,001 to £15,000,000"],
+                  ["over_15m", "More than £15,000,000"],
+                ]).map(([val, label]) => (
                   <button key={val} onClick={() => set("grossAssetsBefore", val)}
                     className={`w-full text-left border rounded-lg p-3 transition-all ${data.grossAssetsBefore === val ? "border-[#0d7a5f] bg-[#f0faf6]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
                     <span className="text-sm font-medium">{label}</span>
-                    <span className="text-xs text-[#888] ml-2">{note}</span>
                   </button>
                 ))}
               </div>
+              {data.scheme === "seis" && <p className={hintClass}>SEIS requires gross assets of no more than £350,000 before the investment.</p>}
+              {isEis && <p className={hintClass}>EIS requires gross assets of less than £15 million before the investment.</p>}
               <Err field="grossAssetsBefore" {...errProps} />
             </div>
-            {(data.scheme === "eis" || data.scheme === "both") && (
+            {isEis && (
               <div className={fieldClass}>
                 <label className={labelClass}>What will be the gross assets immediately after the share issue?</label>
                 <div className="space-y-2">
@@ -880,23 +1018,34 @@ export default function ApplyPage() {
               <label className={labelClass}>How many full-time equivalent employees does the company expect to have on the date of share issue?</label>
               <input className={inputClass} type="number" value={data.employeeCount} onChange={e => set("employeeCount", e.target.value)} placeholder="e.g. 3" />
               <p className={hintClass}>
-                Include employees of any subsidiaries.
-                {data.scheme === "seis" && " Fewer than 25 required for SEIS."}
-                {data.scheme === "eis" && " Fewer than 250 required for EIS."}
-                {data.scheme === "both" && " Fewer than 25 for SEIS, fewer than 250 for EIS."}
+                {data.scheme === "seis" && "Must be fewer than 25 full-time equivalent employees."}
+                {data.scheme === "eis" && "Must be fewer than 250 full-time equivalent employees (500 for KICs)."}
+                {data.scheme === "both" && "Must be fewer than 25 full-time equivalent employees for SEIS, fewer than 250 for EIS (500 for KICs)."}
               </p>
               <Err field="employeeCount" {...errProps} />
             </div>
           </div>
         )}
 
-        {/* STEP 8: BUSINESS ADDRESS */}
-        {step === 8 && (
+        {/* STEP: BUSINESS ADDRESS */}
+        {step === stepFor("Business address") && (
           <div>
             <SectionHeading
-              title="Business address"
-              subtitle="Where is the company registered and where does it operate?"
+              title="Business address and signatory"
+              subtitle="Where is the company registered and who will sign the agent authority letter?"
             />
+            <div className={fieldClass}>
+              <label className={labelClass}>Full name of authorised signatory</label>
+              <input className={inputClass} value={data.signatoryName} onChange={e => set("signatoryName", e.target.value)} placeholder="e.g. Jane Smith" />
+              <p className={hintClass}>The director or company secretary who will sign the agent authority letter. This must be a director, company secretary, or other registered officer of the company.</p>
+              <Err field="signatoryName" {...errProps} />
+            </div>
+            <div className={fieldClass}>
+              <label className={labelClass}>Position in company</label>
+              <input className={inputClass} value={data.signatoryPosition} onChange={e => set("signatoryPosition", e.target.value)} placeholder="e.g. Director" />
+              <p className={hintClass}>For example: Director, Company Secretary, Chief Executive Officer.</p>
+              <Err field="signatoryPosition" {...errProps} />
+            </div>
             <div className={fieldClass}>
               <label className={labelClass}>Was the company incorporated in the UK?</label>
               <YesNo field="ukIncorporated" value={data.ukIncorporated} />
@@ -948,8 +1097,8 @@ export default function ApplyPage() {
           </div>
         )}
 
-        {/* STEP 9: REVIEW */}
-        {step === 9 && (
+        {/* STEP: REVIEW */}
+        {step === stepFor("Review") && (
           <div>
             {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("payment") === "cancelled" && (
               <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-6">
@@ -971,7 +1120,11 @@ export default function ApplyPage() {
                 { label: "Trade started", value: data.tradeStarted === true ? "Yes" : data.tradeStarted === false ? "No" : "" },
                 { label: "Previous VCS", value: data.previousVcs === true ? "Yes" : data.previousVcs === false ? "No" : "" },
                 { label: "Employees", value: data.employeeCount },
-                { label: "Gross assets before", value: ({ up_to_350k: "Up to £350,000", "350k_to_1m": "£350,001 to £1,000,000", "1m_to_5m": "£1,000,001 to £5,000,000", "5m_to_10m": "£5,000,001 to £10,000,000", "10m_to_15m": "£10,000,001 to £15,000,000", over_15m: "More than £15,000,000" } as Record<string, string>)[data.grossAssetsBefore] || data.grossAssetsBefore },
+                { label: "Gross assets before", value: ({ up_to_350k: "Up to £350,000", "350k_to_1m": "£350,001 to £1,000,000", up_to_1m: "Up to £1,000,000", "1m_to_5m": "£1,000,001 to £5,000,000", "5m_to_10m": "£5,000,001 to £10,000,000", "10m_to_15m": "£10,000,001 to £15,000,000", over_10m: "More than £10,000,000", over_15m: "More than £15,000,000" } as Record<string, string>)[data.grossAssetsBefore] || data.grossAssetsBefore },
+                { label: "Commercial sale", value: data.hasCommercialSale === true ? "Yes" : data.hasCommercialSale === false ? "No" : "" },
+                { label: "First commercial sale", value: data.firstCommercialSaleDate ? data.firstCommercialSaleDate.split("-").reverse().join("/") : "" },
+                { label: "Within initial period", value: data.withinInitialPeriod === "yes" ? "Yes" : data.withinInitialPeriod === "no" ? "No" : data.withinInitialPeriod === "not_sure" ? "Not sure" : "" },
+                { label: "Signatory", value: data.signatoryName ? `${data.signatoryName}, ${data.signatoryPosition}` : "" },
               ].filter(r => r.value).map(row => (
                 <div key={row.label} className="flex justify-between items-start py-3 border-b border-[#f5f5f2]">
                   <span className="text-sm text-[#666]">{row.label}</span>
@@ -1008,10 +1161,10 @@ export default function ApplyPage() {
 
         {/* NAVIGATION */}
         <div className="mt-10 pt-6 border-t border-[#f0f0ec]">
-          {step < STEPS.length && showErrors && errorCount > 0 && (
+          {step < steps.length && showErrors && errorCount > 0 && (
             <p className="text-xs text-[#e55] mb-3 text-right">{errorCount} {errorCount === 1 ? "field" : "fields"} still needed</p>
           )}
-          {step < STEPS.length && !showErrors && errorCount > 0 && (
+          {step < steps.length && !showErrors && errorCount > 0 && (
             <p className="text-xs text-[#aaa] mb-3 text-right">{errorCount} {errorCount === 1 ? "field" : "fields"} still needed</p>
           )}
           <div className="flex justify-between items-center">
@@ -1022,7 +1175,7 @@ export default function ApplyPage() {
             ) : (
               <div />
             )}
-            {step < STEPS.length && (
+            {step < steps.length && (
               <button
                 onClick={next}
                 disabled={showErrors && !isValid}

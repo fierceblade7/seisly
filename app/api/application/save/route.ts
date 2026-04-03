@@ -33,6 +33,15 @@ export async function POST(request: NextRequest) {
       risk_to_capital: body.riskToCapital || null,
       uk_incorporated: body.ukIncorporated ?? null,
       registered_address: body.registeredAddress || null,
+      has_commercial_sale: body.hasCommercialSale ?? null,
+      first_commercial_sale_date: body.firstCommercialSaleDate || null,
+      within_initial_period: body.withinInitialPeriod || null,
+      outside_period_reason: body.outsidePeriodReason || null,
+      previous_investment_amount: body.previousInvestmentAmount ? parseFloat(body.previousInvestmentAmount.replace(/,/g, '')) : null,
+      previous_investment_date: body.previousInvestmentDate || null,
+      new_market_details: body.newMarketDetails || null,
+      signatory_name: body.signatoryName || null,
+      signatory_position: body.signatoryPosition || null,
       updated_at: new Date().toISOString(),
     }
 
