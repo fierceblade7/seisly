@@ -392,7 +392,11 @@ export default function EligibilityPage() {
                   </p>
                 </div>
 
-                <button onClick={restart} className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2">
+                <p className="text-xs text-center text-[#aaa] mt-4 leading-relaxed px-4">
+                  Eligibility is assessed against published HMRC qualifying conditions. Passing this check does not guarantee that HMRC will approve your advance assurance application. HMRC&apos;s decision is discretionary and final.
+                </p>
+
+                <button onClick={restart} className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2 mt-2">
                   Start again
                 </button>
               </div>

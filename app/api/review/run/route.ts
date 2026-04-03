@@ -392,7 +392,8 @@ Respond ONLY with a JSON object with no markdown fences:
             View your review
           </a>
           <p style="font-size: 13px; color: #aaa; margin-top: 32px; line-height: 1.6;">
-            If you have any questions, reply to this email or contact us at support@seisly.com.<br>
+            If you have any questions, reply to this email or contact us at support@seisly.com.<br><br>
+            Seisly does not guarantee HMRC approval. Advance assurance is discretionary and HMRC's decision is final. Our money-back guarantee applies only where rejection is due to our error.<br><br>
             Seisly is a product of Litigo Limited, 71-75 Shelton Street, London WC2H 9JQ.
           </p>
         </div>

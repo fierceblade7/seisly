@@ -220,6 +220,11 @@ function ReviewPageContent() {
                     </p>
                   </div>
                 )}
+                <div className="bg-[#f5f5f2] border border-[#e8e8e4] rounded-xl p-4 mb-4">
+                  <p className="text-xs text-[#888] leading-relaxed">
+                    Please note: Seisly does not guarantee that your application will be approved by HMRC. Our AI review is designed to improve your application quality but is not infallible. HMRC advance assurance is discretionary and their decision is final. Our money-back guarantee applies only where rejection is demonstrably due to an error in our preparation or submission.
+                  </p>
+                </div>
                 <button
                   onClick={() => setFlowStep('declare')}
                   className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors"

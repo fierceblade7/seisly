@@ -85,9 +85,12 @@ export default function TermsOfUse() {
           </section>
 
           <section>
-            <h2 className="font-serif text-xl text-[#1a1a18] mb-3">HMRC advance assurance</h2>
-            <p>Advance assurance from HMRC is not a guarantee that tax relief will be available to investors. It is an indication that HMRC considers the company likely to qualify based on the information provided. Final confirmation of relief depends on compliance with all conditions at the time of investment and throughout the compliance period.</p>
+            <h2 className="font-serif text-xl text-[#1a1a18] mb-3">HMRC advance assurance - no guarantee of outcome</h2>
+            <p>Seisly prepares and submits advance assurance applications to HMRC on your behalf. We do not guarantee, promise, or represent that any application will be approved by HMRC.</p>
+            <p className="mt-3">Advance assurance is a discretionary service provided by HMRC. HMRC is not bound by any previous decisions and may refuse advance assurance even where a company appears to meet all qualifying conditions. HMRC&apos;s decision is final and there is no right of appeal against it.</p>
+            <p className="mt-3">Our AI review is designed to identify common issues and improve application quality. It does not constitute a legal opinion on whether your company qualifies for SEIS or EIS, and it may not identify every potential issue with an application.</p>
             <p className="mt-3">HMRC typically takes 4 to 8 weeks to respond to advance assurance applications. We have no control over HMRC processing times.</p>
+            <p className="mt-3">The founder remains solely responsible for the accuracy and completeness of all information provided, and for ensuring the company continues to meet all qualifying conditions throughout the compliance period.</p>
           </section>
 
           <section>

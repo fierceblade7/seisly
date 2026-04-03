@@ -395,6 +395,12 @@ export default function Home() {
         </div>
       </div>
 
+      <div className="max-w-2xl mx-auto px-6 pb-8">
+        <p className="text-xs text-center text-[#aaa] leading-relaxed">
+          Seisly prepares and submits advance assurance applications on your behalf. We do not guarantee that any application will be approved by HMRC. Advance assurance is a discretionary service and HMRC&apos;s decision is final. Our money-back guarantee applies only where rejection is demonstrably due to an error in our preparation or submission. See our <a href="/terms" className="text-[#0d7a5f] hover:underline">Terms of use</a> for full details.
+        </p>
+      </div>
+
       {/* FAQ */}
       <section id="faq" className="bg-white px-6 py-20">
         <div className="max-w-2xl mx-auto">
