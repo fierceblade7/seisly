@@ -12,6 +12,8 @@ const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export const maxDuration = 120
 
+const PROMPT_VERSION = '1.1.0'
+
 async function downloadDocument(fileUrl: string): Promise<Buffer | null> {
   try {
     const response = await fetch(fileUrl)
@@ -363,7 +365,7 @@ Respond ONLY with a JSON object with no markdown fences:
         review_completed_at: new Date().toISOString(),
         review_pass1: pass1Results,
         review_pass2: pass2Results,
-        review_results: { pass1: pass1Results, pass2: pass2Results, overall: overallStatus },
+        review_results: { pass1: pass1Results, pass2: pass2Results, overall: overallStatus, prompt_version: PROMPT_VERSION, reviewed_at: new Date().toISOString() },
       })
       .eq('email', email)
       .eq('scheme', scheme)
