@@ -47,6 +47,8 @@ function ReviewPageContent() {
   const [sigPosition, setSigPosition] = useState('')
   const [declaring, setDeclaring] = useState(false)
   const [authorising, setAuthorising] = useState(false)
+  const [letterUrl, setLetterUrl] = useState<string | null>(null)
+  const [letterLoading, setLetterLoading] = useState(false)
   const [declareError, setDeclareError] = useState('')
   const [authoriseError, setAuthoriseError] = useState('')
 
@@ -73,6 +75,27 @@ function ReviewPageContent() {
     const interval = setInterval(fetchReview, 5000)
     return () => clearInterval(interval)
   }, [email, scheme])
+
+  const generateLetter = async () => {
+    setLetterLoading(true)
+    try {
+      const res = await fetch('/api/authority-letter/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, scheme })
+      })
+      const data = await res.json()
+      if (data.url) setLetterUrl(data.url)
+    } catch {
+      console.error('Letter generation failed')
+    } finally {
+      setLetterLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (flowStep === 'declared' && !letterUrl && !letterLoading) generateLetter()
+  }, [flowStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return (
     <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
@@ -310,6 +333,33 @@ function ReviewPageContent() {
                   <p className="text-sm font-medium text-[#0a5c47] mb-1">Declaration signed{sigName ? ` by ${sigName}` : ''}</p>
                   <p className="text-xs text-[#666]">Your application is locked. Choose how you would like to proceed.</p>
                 </div>
+
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-5">
+                  <p className="text-sm font-medium mb-2">Agent authority letter</p>
+                  <p className="text-xs text-[#888] mb-3 leading-relaxed">
+                    Your agent authority letter has been generated using the HMRC Venture Capital Schemes template. This will be submitted to HMRC with your application.
+                  </p>
+                  {letterLoading ? (
+                    <p className="text-xs text-[#aaa]">Generating your authority letter...</p>
+                  ) : letterUrl ? (
+                    <a
+                      href={letterUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block border border-[#0d7a5f] text-[#0d7a5f] px-4 py-2 rounded-lg text-xs font-medium hover:bg-[#f0faf6] transition-colors"
+                    >
+                      Download authority letter (PDF)
+                    </a>
+                  ) : (
+                    <button
+                      onClick={generateLetter}
+                      className="text-xs text-[#0d7a5f] border border-[#0d7a5f] px-4 py-2 rounded-lg hover:bg-[#f0faf6]"
+                    >
+                      Generate authority letter
+                    </button>
+                  )}
+                </div>
+
                 <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
                   <h3 className="font-serif text-lg mb-2">Submit it yourself</h3>
                   <p className="text-sm text-[#666] leading-relaxed mb-4">

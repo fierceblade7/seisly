@@ -24,21 +24,21 @@ export async function POST(request: NextRequest) {
       .eq('scheme', scheme)
       .single()
 
-    // Check if declaration has expired (87 days = 3 days before HMRC 90-day limit)
+    // Check if declaration has expired (55 days, within HMRC 2-month limit)
     if (application?.declared_at) {
       const declaredAt = new Date(application.declared_at)
       const daysSinceDeclared = (Date.now() - declaredAt.getTime()) / (1000 * 60 * 60 * 24)
-      if (daysSinceDeclared > 87) {
+      if (daysSinceDeclared > 55) {
         return NextResponse.json({
-          error: 'Your accuracy declaration has expired. Please return to your review and re-sign the declaration before authorising submission.',
+          error: 'Your accuracy declaration has expired. HMRC requires the agent authority letter to be dated within 2 months of submission. Please return to your review and re-sign the declaration.',
           expired: true,
         }, { status: 400 })
       }
     }
 
-    // Calculate authority letter expiry (87 days from declaration)
+    // Calculate authority letter expiry (55 days from declaration)
     const authorityLetterExpiresAt = application?.declared_at
-      ? new Date(new Date(application.declared_at).getTime() + 87 * 24 * 60 * 60 * 1000).toISOString()
+      ? new Date(new Date(application.declared_at).getTime() + 55 * 24 * 60 * 60 * 1000).toISOString()
       : null
 
     await supabase
