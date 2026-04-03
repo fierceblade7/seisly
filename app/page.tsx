@@ -234,7 +234,7 @@ export default function Home() {
           Get investor-ready AND start finding investors. Save over £1,300 vs online legal platforms.
         </p>
         <p className="text-center text-xs text-[#aaa] mt-2">
-          <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a> finds investors and customers - the best non-dilutive finance there is.
+* Free tier available to a limited number of qualifying early-stage founders actively raising SEIS/EIS. Includes investor outreach only. Upgrade anytime to Novar Starter at £49/mo (usual £59/mo) to unlock customer outreach and all Starter features.
         </p>
       </section>
 

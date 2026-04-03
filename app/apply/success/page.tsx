@@ -93,38 +93,50 @@ function SuccessPageContent() {
         </div>
 
         <div className="bg-[#1a1a18] rounded-xl p-6 mb-6 text-left">
-          <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-3">Seisly customer perk</p>
-          <h3 className="font-serif text-xl text-white mb-2">Find investors faster with <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar</a></h3>
-          <p className="text-sm text-[#888] leading-relaxed mb-4">
-            As a Seisly customer you get <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar for Startups</a> at £49/month instead of the usual £59/month. <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">Novar</a> finds investors and customers - the best source of non-dilutive finance there is.
+          <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-3">
+            Seisly customer perk
           </p>
-          <div className="bg-[#2a2a28] rounded-lg p-4 mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#888] mb-1">Your discount code</p>
-              {promoLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-[#5DCAA5] border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-[#888]">Generating your unique code...</p>
-                </div>
-              ) : promoCode ? (
-                <p className="font-mono text-lg text-[#5DCAA5] font-medium tracking-widest">{promoCode}</p>
-              ) : (
-                <p className="text-sm text-[#888]">Code will be emailed to you shortly, or contact <a href="mailto:support@seisly.com" className="text-[#5DCAA5]">support@seisly.com</a></p>
-              )}
-            </div>
-            {promoCode && (
-              <button
-                onClick={() => { navigator.clipboard.writeText(promoCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                className="text-xs text-[#5DCAA5] border border-[#5DCAA5] px-3 py-1.5 rounded hover:bg-[#5DCAA5] hover:text-[#1a1a18] transition-colors"
-              >
-                {copied ? "Copied!" : "Copy"}
-              </button>
-            )}
+          <h3 className="font-serif text-xl text-white mb-2">
+            Find investors free for 3 months with{" "}
+            <a href="https://www.usenovar.ai" target="_blank"
+            rel="noopener noreferrer" className="text-[#5DCAA5] hover:underline">
+            Novar for Startups
+            </a>
+          </h3>
+          <p className="text-sm text-[#888] leading-relaxed mb-4">
+            A limited number of qualifying Seisly founders get 3 months of free
+            access to Novar for Startups, an AI tool that finds and
+            reaches out to investors on your behalf. Subject to a quick
+            approval review.
+          </p>
+          <div className="bg-[#2a2a28] rounded-lg p-4 mb-4 space-y-2">
+            <p className="text-xs text-[#5DCAA5] font-medium uppercase tracking-wide">
+              Free tier includes
+            </p>
+            <p className="text-xs text-[#888]">AI investor research and outreach on up to 75 prospects</p>
+            <p className="text-xs text-[#888]">Personalised investor email sequences</p>
+            <p className="text-xs text-[#888]">3 months free, no credit card required</p>
           </div>
-          <a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer"
-            className="block text-center bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
-            Get Novar for Startups &rarr;
+          <div className="bg-[#2a2a28] rounded-lg p-4 mb-4 space-y-2">
+            <p className="text-xs text-[#5DCAA5] font-medium uppercase tracking-wide">
+              Upgrade anytime to Novar Starter at £49/mo
+            </p>
+            <p className="text-xs text-[#888]">Everything in the free tier, plus customer outreach</p>
+            <p className="text-xs text-[#888]">Higher prospect limits, voice calls, autopilot and more</p>
+            <p className="text-xs text-[#888]">Usually £59/mo, Seisly customers pay £49/mo</p>
+          </div>
+          <a
+            href="https://www.usenovar.ai/startups"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors"
+          >
+            Apply for 3 months free access
           </a>
+          <p className="text-xs text-[#555] text-center mt-3">
+            Limited places available for qualifying founders actively
+            raising SEIS/EIS investment. Subject to approval.
+          </p>
         </div>
 
         <Link href="/apply/upload">
