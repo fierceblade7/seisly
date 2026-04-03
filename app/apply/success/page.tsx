@@ -1,6 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import Link from "next/link";
 
 const Logo = () => (
@@ -13,50 +12,6 @@ const Logo = () => (
 );
 
 function SuccessPageContent() {
-  const params = useSearchParams();
-  const sessionId = params.get("session_id");
-  const [verified, setVerified] = useState(false);
-  const [promoCode, setPromoCode] = useState<string | null>(null);
-  const [promoLoading, setPromoLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (sessionId) setVerified(true);
-  }, [sessionId]);
-
-  useEffect(() => {
-    const email = typeof window !== 'undefined' ? sessionStorage.getItem('seisly_email') : null;
-    if (!email) {
-      setPromoLoading(false);
-      return;
-    }
-
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    const fetchPromo = async () => {
-      try {
-        const res = await fetch(`/api/promo-code?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.promoCode) {
-          setPromoCode(data.promoCode);
-          setPromoLoading(false);
-          return;
-        }
-      } catch {
-        // ignore fetch errors, will retry
-      }
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(fetchPromo, 2000);
-      } else {
-        setPromoLoading(false);
-      }
-    };
-
-    // Delay first attempt to give the webhook time to fire
-    setTimeout(fetchPromo, 3000);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">

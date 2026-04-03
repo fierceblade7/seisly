@@ -11,6 +11,12 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
 export async function POST(request: NextRequest) {
+  const internalSecret = request.headers.get('x-internal-secret')
+  const expectedSecret = process.env.INTERNAL_SECRET || 'seisly-internal'
+  if (internalSecret !== expectedSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let email = ''
   let scheme = ''
 
@@ -110,7 +116,6 @@ Respond ONLY with a JSON object in this exact format:
     })
 
     let pass1Results: Record<string, unknown> = {}
-    console.log('[AI Review] Pass 1 raw:', pass1Response.content[0].type === 'text' ? pass1Response.content[0].text.substring(0, 200) : 'not text')
     try {
       const pass1Text = pass1Response.content[0].type === 'text'
         ? pass1Response.content[0].text
@@ -169,7 +174,6 @@ Respond ONLY with a JSON object in this exact format:
     })
 
     let pass2Results: Record<string, unknown> = {}
-    console.log('[AI Review] Pass 2 raw:', pass2Response.content[0].type === 'text' ? pass2Response.content[0].text.substring(0, 200) : 'not text')
     try {
       const pass2Text = pass2Response.content[0].type === 'text'
         ? pass2Response.content[0].text
@@ -203,7 +207,8 @@ Respond ONLY with a JSON object in this exact format:
       .eq('scheme', scheme)
 
     // 7. Send email via Resend
-    const reviewUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/apply/review?email=${encodeURIComponent(email)}&scheme=${scheme}`
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
+    const reviewUrl = `${baseUrl}/apply/review?email=${encodeURIComponent(email)}&scheme=${scheme}`
 
     await resend.emails.send({
       from: 'Seisly <hello@seisly.com>',

@@ -21,17 +21,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  console.log('[Stripe Webhook] Event received:', event.type)
-
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    console.log('[Stripe Webhook] Full session.metadata:', JSON.stringify(session.metadata, null, 2))
-
     const { email, scheme } = session.metadata || {}
-    console.log('[Stripe Webhook] Extracted values — email:', email, 'scheme:', scheme)
 
     if (email && scheme) {
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('applications')
         .update({
           paid: true,
@@ -42,14 +37,11 @@ export async function POST(request: NextRequest) {
         .eq('scheme', scheme)
         .select()
 
-      console.log('[Stripe Webhook] Supabase update result — data:', JSON.stringify(data), 'error:', JSON.stringify(error), 'count:', count)
-
       if (error) {
         console.error('[Stripe Webhook] Supabase update FAILED:', error.message, error.details, error.hint)
       } else if (!data || data.length === 0) {
-        console.warn('[Stripe Webhook] Supabase update matched 0 rows. No application found for email:', email, 'scheme:', scheme)
+        console.error('[Stripe Webhook] Update matched 0 rows for email:', email, 'scheme:', scheme)
       } else {
-        console.log('[Stripe Webhook] Supabase update SUCCESS. Updated', data.length, 'row(s)')
 
         // Create unique Novar promo code for this customer
         try {
@@ -65,16 +57,14 @@ export async function POST(request: NextRequest) {
               .update({ novar_promo_code: promoCode.code, novar_promo_code_id: promoCode.id })
               .eq('email', email)
               .eq('scheme', scheme)
-            console.log('[Stripe Webhook] Novar promo code created:', promoCode.code)
           } else {
-            console.log('[Stripe Webhook] Skipping promo code — STRIPE_NOVAR_COUPON_ID not set')
           }
         } catch (promoErr) {
           console.error('[Stripe Webhook] Promo code creation failed:', promoErr)
         }
       }
     } else {
-      console.warn('[Stripe Webhook] Missing metadata — email:', email, 'scheme:', scheme, '. Skipping Supabase update.')
+      console.error('[Stripe Webhook] Missing metadata - email:', email, 'scheme:', scheme)
     }
   }
 

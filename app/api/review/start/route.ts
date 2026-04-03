@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     fetch(`${baseUrl}/api/review/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.INTERNAL_SECRET || 'seisly-internal',
+      },
       body: JSON.stringify({ email, scheme: effectiveScheme }),
     }).catch(err => console.error('Background review trigger failed:', err))
 

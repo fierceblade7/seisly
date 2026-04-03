@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid scheme' }, { status: 400 })
     }
 
-    console.log('[Stripe Checkout] Creating session with metadata:', { scheme, email, applicationId })
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
         scheme,
         email: email || '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/apply/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/apply?payment=cancelled`,
+      success_url: `${baseUrl}/apply/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/apply?payment=cancelled`,
     })
 
     return NextResponse.json({ url: session.url })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 
 type Scheme = "seis" | "eis" | "both";
@@ -424,7 +424,7 @@ export default function ApplyPage() {
           applicationId: data.companyNumber,
         }),
       });
-      const { url, error } = await res.json();
+      const { url } = await res.json();
       if (url) {
         window.location.href = url;
       } else {
