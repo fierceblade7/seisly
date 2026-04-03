@@ -213,11 +213,15 @@ export default function Home() {
                 <span className="font-medium text-[#0d7a5f]">£149 + VAT</span>
               </li>
               <li className="flex justify-between text-sm">
-                <span className="text-[#666]"><a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a></span>
-                <span className="font-medium text-[#0d7a5f]">£49/mo + VAT</span>
+                <span className="text-[#666]"><a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a> (limited places)</span>
+                <span className="font-medium text-[#0d7a5f]">Free*</span>
               </li>
               <li className="flex justify-between text-sm">
-                <span className="text-[#0d7a5f] text-xs italic">(usual price £59/mo - Seisly discount)</span>
+                <span className="text-[#666]">Upgrade to Novar Starter anytime at £49/mo</span>
+                <span className="font-medium text-[#0d7a5f]"></span>
+              </li>
+              <li className="flex justify-between text-sm">
+                <span className="text-[#0d7a5f] text-xs italic">(usual Novar Starter price £59/mo)</span>
                 <span className="font-medium text-[#0d7a5f]"></span>
               </li>
             </ul>
@@ -225,16 +229,24 @@ export default function Home() {
               <span className="text-sm font-medium text-[#0a5c47]">Total</span>
               <div className="text-right">
                 <span className="font-serif text-2xl text-[#0d7a5f]">&pound;149 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
-                <p className="text-xs text-[#0d7a5f] mt-0.5">then £49/mo + VAT</p>
+                <p className="text-xs text-[#0d7a5f] mt-0.5">including Novar for Startups free for 3 months*</p>
               </div>
             </div>
           </div>
         </div>
         <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
-          Get investor-ready AND start finding investors. Save over £1,300 vs online legal platforms.
+          Get your SEIS/EIS advance assurance and find investors free for 3 months. Save over £1,300 vs online legal platforms.
         </p>
         <p className="text-center text-xs text-[#aaa] mt-2">
-* Free tier available to a limited number of qualifying early-stage founders actively raising SEIS/EIS. Includes investor outreach only. Upgrade anytime to Novar Starter at £49/mo (usual £59/mo) to unlock customer outreach and all Starter features.
+          * Novar for Startups is free for 3 months for a limited number of qualifying early-stage founders actively raising SEIS/EIS. Includes investor outreach only. Upgrade anytime to Novar Starter at £49/mo (usual £59/mo) to unlock customer outreach and all Starter features.
+        </p>
+        <p className="text-center text-xs text-[#aaa] mt-2">
+          Not yet qualifying or not yet raising?{" "}
+          <a href="/eligibility" className="text-[#0d7a5f] hover:underline">
+            Go through the eligibility checker
+          </a>
+          {" "}and leave your email to join the waitlist.
+          We will open up to more founders soon.
         </p>
       </section>
 
