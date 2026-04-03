@@ -337,7 +337,16 @@ function ReviewPageContent() {
                       authorised agent.&rdquo;
                     </p>
                   </div>
-                  {authoriseError && <p className="text-xs text-[#c0392b] mb-4">{authoriseError}</p>}
+                  {authoriseError && (
+                    <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-4 mb-4">
+                      <p className="text-xs text-[#c0392b] mb-2">{authoriseError}</p>
+                      {authoriseError.includes('expired') && (
+                        <button onClick={() => setFlowStep('declare')} className="text-xs text-[#0d7a5f] hover:underline">
+                          Re-sign your declaration
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <button
                     onClick={async () => {
                       setAuthorising(true)
@@ -350,7 +359,7 @@ function ReviewPageContent() {
                         })
                         const d = await res.json()
                         if (d.success) setFlowStep('authorised')
-                        else setAuthoriseError('Something went wrong. Please try again.')
+                        else setAuthoriseError(d.error || 'Something went wrong. Please try again.')
                       } catch { setAuthoriseError('Something went wrong. Please try again.') }
                       finally { setAuthorising(false) }
                     }}

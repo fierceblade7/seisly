@@ -16,13 +16,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Fetch application for company name
+    // Fetch application for company name and declaration date
     const { data: application } = await supabase
       .from('applications')
-      .select('company_name, declared_by_name, declared_by_position, scheme')
+      .select('company_name, declared_by_name, declared_by_position, scheme, declared_at')
       .eq('email', email)
       .eq('scheme', scheme)
       .single()
+
+    // Check if declaration has expired (87 days = 3 days before HMRC 90-day limit)
+    if (application?.declared_at) {
+      const declaredAt = new Date(application.declared_at)
+      const daysSinceDeclared = (Date.now() - declaredAt.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysSinceDeclared > 87) {
+        return NextResponse.json({
+          error: 'Your accuracy declaration has expired. Please return to your review and re-sign the declaration before authorising submission.',
+          expired: true,
+        }, { status: 400 })
+      }
+    }
+
+    // Calculate authority letter expiry (87 days from declaration)
+    const authorityLetterExpiresAt = application?.declared_at
+      ? new Date(new Date(application.declared_at).getTime() + 87 * 24 * 60 * 60 * 1000).toISOString()
+      : null
 
     await supabase
       .from('applications')
@@ -31,6 +48,7 @@ export async function POST(request: NextRequest) {
         authorised_at: new Date().toISOString(),
         authorised_by_name: name,
         submission_requested_at: new Date().toISOString(),
+        authority_letter_expires_at: authorityLetterExpiresAt,
       })
       .eq('email', email)
       .eq('scheme', scheme)
