@@ -22,7 +22,15 @@ export default function Home() {
     },
     {
       q: "What if HMRC rejects my application?",
-      a: "If HMRC rejects your advance assurance application due to an error on our part, we will refund you in full. If the rejection is because your company does not qualify (which our eligibility check should catch), we will help you understand why and what to do next.",
+      a: "We only submit applications we are confident meet all HMRC qualifying conditions. In the unlikely event HMRC rejects an application we submitted, we will refund your fee in full, no questions asked. If resubmission is needed due to changed circumstances or additional information, we charge £50 + VAT per resubmission attempt.",
+    },
+    {
+      q: "How does the money-back guarantee work?",
+      a: "We only submit applications we are confident will be approved. Before submitting to HMRC, we review your documents and application answers ourselves. If we do not believe your application meets all the qualifying conditions, we will tell you what needs to change before we submit. This means we never submit applications we think will fail, which is why we can offer a money-back guarantee if HMRC rejects an application we submitted. The guarantee does not apply if HMRC rejects due to circumstances that change after submission, or information you provided that turns out to be inaccurate.",
+    },
+    {
+      q: "What if my application needs to be resubmitted?",
+      a: "If HMRC rejects your application and resubmission is required, we charge £50 + VAT per resubmission attempt. If the rejection was due to an error on our part rather than your company not qualifying, we resubmit free of charge as part of our money-back guarantee.",
     },
     {
       q: "How long does HMRC take to respond?",
@@ -46,9 +54,8 @@ export default function Home() {
     { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
     { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
     { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£199 + VAT" },
-    { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 + VAT (coming soon)" },
+    { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 + VAT (separate product)" },
     { label: "Investor finder tool", a: "Not offered", b: "~£600 + VAT", c: <span>£49/mo (<a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="hover:underline">Novar</a>)</span> },
-    { label: "Investor certificates included", a: "✗", b: "✓", c: "✓" },
     { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
     { label: "Instant eligibility check", a: "✗", b: "✓", c: "✓" },
     { label: "Complex cases handled", a: "✓", b: "✗", c: "✓" },
@@ -60,15 +67,15 @@ export default function Home() {
   const plans = [
     {
       name: "SEIS only", price: "149", featured: false,
-      features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "SEIS1 form completion", "Investor certificates (SEIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
+      features: ["Eligibility check", "Advance assurance application", "AI document review", "HMRC covering letter", "Agent authority letter", "Submission to HMRC", "HMRC response tracking", "One round of query support", "Money-back guarantee"],
     },
     {
       name: "SEIS and EIS", price: "199", featured: true,
-      features: ["Everything in SEIS", "EIS advance assurance", "EIS1 form completion", "Investor certificates (EIS3)", "HMRC query support (both)", "Compliance tracking (3 years)", "Complex cases handled", "Money-back guarantee"],
+      features: ["Everything in SEIS", "EIS advance assurance", "Combined SEIS and EIS submission", "Agent authority letter", "HMRC response tracking", "One round of query support (both schemes)", "Complex cases handled", "Money-back guarantee"],
     },
     {
       name: "EIS only", price: "149", featured: false,
-      features: ["Eligibility check", "Advance assurance application", "HMRC covering letter", "EIS1 form completion", "Investor certificates (EIS3)", "Compliance tracking (3 years)", "HMRC query support", "Money-back guarantee"],
+      features: ["Eligibility check", "Advance assurance application", "AI document review", "HMRC covering letter", "Agent authority letter", "Submission to HMRC", "HMRC response tracking", "One round of query support", "Money-back guarantee"],
     },
   ];
 
@@ -77,16 +84,16 @@ export default function Home() {
     { n: 2, title: "Tell us about your raise", desc: "How much are you raising, from how many investors, and on what terms. We use this to complete your application correctly first time.", tag: "No jargon, plain English throughout" },
     { n: 3, title: "We draft your application", desc: "Our AI generates your full advance assurance submission, including the covering letter HMRC expects, built from over a decade of real applications.", tag: "AI-powered, expert-trained" },
     { n: 4, title: "Review, approve, submit", desc: "Read through your application, make any tweaks, and submit directly to HMRC's SEIS and EIS team. We track the status and alert you to any updates.", tag: "HMRC turnaround: 4 to 8 weeks" },
-    { n: 5, title: "Issue investor certificates", desc: "Once approved and shares are issued, generate SEIS3 or EIS3 certificates for every investor in one click. Ready to send straight away.", tag: "Included in your one-off fee" },
+    { n: 5, title: "HMRC responds", desc: "We track your application and notify you the moment HMRC issues their decision. Average response time is 4 to 8 weeks. Once approved, you are ready to raise.", tag: "We track it for you" },
   ];
 
   const features = [
     { icon: "⚡", title: "Instant eligibility check", desc: "Know in 2 minutes whether you qualify, before you spend a penny." },
-    { icon: "✍️", title: "AI advance assurance letter", desc: "A proper covering letter drafted to HMRC's expectations, trained on a decade of real applications." },
-    { icon: "📋", title: "SEIS1 and EIS1 forms", desc: "All required HMRC forms completed and formatted correctly. Nothing left blank." },
-    { icon: "📄", title: "Investor certificates", desc: "SEIS3 and EIS3 certificates generated automatically once HMRC approves and shares are issued." },
-    { icon: "🔔", title: "Compliance reminders", desc: "We track your 3-year compliance window and alert you when action is needed." },
-    { icon: "💬", title: "HMRC query support", desc: "If HMRC writes back with questions, we help you respond. Included, not billed by the hour." },
+    { icon: "📋", title: "Full application preparation", desc: "We prepare your complete SEIS or EIS advance assurance application, covering letter, and all supporting documents in the format HMRC expects." },
+    { icon: "🔍", title: "AI document review", desc: "We review your uploaded documents for completeness and consistency before submission. You see exactly what HMRC will see, with suggestions to strengthen your application." },
+    { icon: "📮", title: "Submission to HMRC as your agent", desc: "We submit your application directly to HMRC's Venture Capital Reliefs team on your behalf, using a signed agent authority letter." },
+    { icon: "🔔", title: "HMRC response tracking", desc: "We track your application status and notify you the moment HMRC responds. Average turnaround is 4 to 8 weeks." },
+    { icon: "💬", title: "Query support", desc: "If HMRC comes back with questions, we help you respond. One round of HMRC queries included." },
   ];
 
   return (
@@ -347,6 +354,9 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+                <p className="text-xs text-[#aaa] mt-3 pt-3 border-t border-[#f0f0ec]">
+                  Resubmission if required: £50 + VAT per attempt
+                </p>
                 <Link href="/eligibility">
                   <button className={`w-full py-3 rounded-lg text-sm font-medium transition-colors border border-[#0d7a5f] ${plan.featured ? "bg-[#0d7a5f] text-white hover:bg-[#0a5c47]" : "text-[#0d7a5f] hover:bg-[#0d7a5f] hover:text-white"}`}>
                     Get started &rarr;
@@ -356,10 +366,22 @@ export default function Home() {
             ))}
           </div>
           <p className="text-xs text-center text-[#aaa] mt-4">
-            Non-UK companies add £100. Nominee structures coming soon.
+            Non-UK companies add £100. Resubmission £50 + VAT if required. Nominee structures coming soon.
           </p>
         </div>
       </section>
+
+      {/* COMPLIANCE NOTE */}
+      <div className="max-w-2xl mx-auto px-6 pb-8">
+        <div className="bg-[#f5f5f2] border border-[#e8e8e4] rounded-xl p-5">
+          <p className="text-sm font-medium text-[#1a1a18] mb-2">
+            Need to issue investor certificates?
+          </p>
+          <p className="text-sm text-[#666] leading-relaxed">
+            Once HMRC approves your advance assurance and shares are issued, you will need to submit a compliance statement (SEIS1 or EIS1) and generate investor certificates (SEIS3 or EIS3). This is a separate Seisly product, coming soon, priced at £399 + VAT.
+          </p>
+        </div>
+      </div>
 
       {/* FAQ */}
       <section id="faq" className="bg-white px-6 py-20">
