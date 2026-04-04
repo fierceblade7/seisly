@@ -1,12 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const waitlistLimiter = rateLimit({ name: 'waitlist', maxRequests: 5, windowMs: 24 * 60 * 60 * 1000 })
+
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const { success } = waitlistLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   try {
     const { email, scheme, source } = await request.json()
 

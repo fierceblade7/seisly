@@ -10,9 +10,13 @@ const supabase = createClient(
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+
 export const maxDuration = 120
 
 const PROMPT_VERSION = '1.1.0'
+
+const reviewLimiter = rateLimit({ name: 'review-run', maxRequests: 5, windowMs: 60 * 60 * 1000 })
 
 async function downloadDocument(fileUrl: string): Promise<Buffer | null> {
   try {
@@ -81,6 +85,14 @@ async function extractTextFromXlsx(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  // Internal secret check
+  // Rate limit
+  const ip = getClientIp(request.headers)
+  const { success } = reviewLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   // Internal secret check
   const internalSecret = request.headers.get('x-internal-secret')
   const expectedSecret = process.env.INTERNAL_SECRET || 'seisly-internal'

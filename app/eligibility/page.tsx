@@ -249,7 +249,7 @@ export default function EligibilityPage() {
   const progress = step === "scheme" ? 0 : step === "result" ? 100 : Math.round((currentQ / questions.length) * 100);
 
   // SEIS-only disqualifiers that allow EIS continuation on "both" track
-  const softSeisDisqualifiers = ["seis_age", "seis_amount", "seis_assets", "seis_employees"];
+  const softSeisDisqualifiers = ["seis_age", "seis_amount", "seis_assets", "seis_employees", "seis_no_prior"];
 
   // Inline transition message when switching from SEIS+EIS to EIS-only mid-flow
   const [transitionMessage, setTransitionMessage] = useState<string | null>(null);

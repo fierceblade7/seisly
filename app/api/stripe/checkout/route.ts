@@ -1,25 +1,29 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const checkoutLimiter = rateLimit({ name: 'stripe-checkout', maxRequests: 10, windowMs: 60 * 60 * 1000 })
 
-const PRICES: Record<string, number> = {
-  seis: 14900,
-  eis: 14900,
-  both: 19900,
-}
-
-const LABELS: Record<string, string> = {
-  seis: 'SEIS Advance Assurance',
-  eis: 'EIS Advance Assurance',
-  both: 'SEIS and EIS Advance Assurance',
+const PRICE_IDS: Record<string, string | undefined> = {
+  seis: process.env.STRIPE_PRICE_SEIS,
+  eis: process.env.STRIPE_PRICE_EIS,
+  both: process.env.STRIPE_PRICE_SEIS_EIS,
+  resubmission: process.env.STRIPE_PRICE_RESUBMISSION,
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const { success } = checkoutLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   try {
     const { scheme, email, applicationId } = await request.json()
 
-    if (!scheme || !PRICES[scheme]) {
+    const priceId = PRICE_IDS[scheme]
+    if (!scheme || !priceId) {
       return NextResponse.json({ error: 'Invalid scheme' }, { status: 400 })
     }
 
@@ -31,14 +35,7 @@ export async function POST(request: NextRequest) {
       customer_email: email || undefined,
       line_items: [
         {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: LABELS[scheme],
-              description: 'Seisly — HMRC advance assurance application. One-time payment. No subscription.',
-            },
-            unit_amount: PRICES[scheme],
-          },
+          price: priceId,
           quantity: 1,
         },
       ],

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,13 @@ export async function GET(request: NextRequest) {
 
   if (!email) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+  }
+
+  // Verify authenticated user matches the requested email
+  const authClient = await createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user || user.email !== email) {
+    return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
   const { data, error } = await supabase

@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   const password = request.headers.get('x-admin-password')
-  if (password !== (process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'seisly-admin-2026')) {
+  if (password !== (process.env.ADMIN_PASSWORD || 'seisly-admin-2026')) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
