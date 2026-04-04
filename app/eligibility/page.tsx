@@ -215,7 +215,7 @@ export default function EligibilityPage() {
   const progress = step === "scheme" ? 0 : step === "result" ? 100 : Math.round((currentQ / questions.length) * 100);
 
   // Questions that trigger soft SEIS disqualification (continue to EIS) when on "both" track
-  const softSeisDisqualifiers = ["seis_age", "seis_amount"];
+  const softSeisDisqualifiers = ["seis_age", "seis_amount", "seis_assets"];
 
   const handleAnswer = (answer: Answer) => {
     const q = questions[currentQ];
