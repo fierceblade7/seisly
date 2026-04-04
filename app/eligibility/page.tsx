@@ -30,7 +30,7 @@ const seisQuestions: Question[] = [
   {
     id: "not_listed",
     question: "Is your company unquoted and not listed on any recognised stock exchange?",
-    hint: "AIM and similar markets count as recognised exchanges.",
+    hint: "Main market (LSE), NYSE, NASDAQ and similar major exchanges count as recognised. AIM and AQSE are not recognised exchanges for SEIS/EIS purposes, so AIM companies can still qualify.",
     disqualifies: "both",
     disqualifyOn: "no",
     disqualifyMessage: "Listed companies do not qualify for SEIS or EIS.",
