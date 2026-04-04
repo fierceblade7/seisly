@@ -51,8 +51,8 @@ const seisQuestions: Question[] = [
   },
   {
     id: "seis_age",
-    question: "Was your company incorporated less than 3 years ago?",
-    hint: "The date of your first SEIS investment must be within 3 years of your company starting to trade.",
+    question: "Was your company's first day of trading less than 3 years ago?",
+    hint: "The date of your first SEIS investment must be within 3 years of the date the company started to trade, not the date of incorporation.",
     disqualifies: "seis",
     disqualifyOn: "no",
     disqualifyMessage: "SEIS requires your company to have been trading for less than 3 years at the time of the first investment.",
