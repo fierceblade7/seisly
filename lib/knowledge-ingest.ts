@@ -44,29 +44,41 @@ function contentHash(content: string): string {
   return createHash('sha256').update(content).digest('hex')
 }
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 async function getEmbedding(text: string): Promise<number[]> {
   const apiKey = process.env.VOYAGE_API_KEY
   if (!apiKey) throw new Error('VOYAGE_API_KEY not set')
 
-  const res = await fetch('https://api.voyageai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'voyage-3',
-      input: text.substring(0, 8000),
-    }),
-  })
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch('https://api.voyageai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'voyage-3',
+        input: text.substring(0, 8000),
+      }),
+    })
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Voyage API error: ${res.status} ${err}`)
+    if (res.status === 429) {
+      console.warn(`[KB Ingest] Voyage 429 rate limited, attempt ${attempt + 1}/3, waiting 2s`)
+      await sleep(2000)
+      continue
+    }
+
+    if (!res.ok) {
+      const err = await res.text()
+      throw new Error(`Voyage API error: ${res.status} ${err}`)
+    }
+
+    const data = await res.json()
+    return data.data[0].embedding
   }
 
-  const data = await res.json()
-  return data.data[0].embedding
+  throw new Error('Voyage API rate limited after 3 retries')
 }
 
 export async function queryKnowledgeBase(query: string, limit: number = 10): Promise<Array<{ content: string; source_name: string; section_reference: string | null }>> {
@@ -176,54 +188,58 @@ export async function ingestSource(source: { url: string; name: string }): Promi
       const hash = contentHash(chunk)
       const sectionRef = `${source.name} [chunk ${i + 1}/${chunks.length}]`
 
-      // Check if chunk already exists with same hash
+      // Check if chunk already exists with same hash (use maybeSingle to avoid 406)
       const { data: existing } = await supabase
         .from('knowledge_base')
         .select('id, content_hash')
         .eq('source_url', source.url)
         .eq('section_reference', sectionRef)
-        .single()
+        .maybeSingle()
 
       if (existing && existing.content_hash === hash) {
         result.chunks_skipped++
         continue
       }
 
+      // Rate limit before embedding call
+      await sleep(200)
+
       // Generate embedding
       const embedding = await getEmbedding(chunk)
 
-      if (existing) {
-        // Update existing chunk
-        await supabase
-          .from('knowledge_base')
-          .update({
-            content: chunk,
-            embedding: embedding as unknown as string,
-            content_hash: hash,
-            last_fetched_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existing.id)
-
-        result.chunks_updated++
-      } else {
-        // Insert new chunk
-        await supabase
-          .from('knowledge_base')
-          .insert({
-            source_url: source.url,
-            source_name: source.name,
-            section_reference: sectionRef,
-            content: chunk,
-            embedding: embedding as unknown as string,
-            content_hash: hash,
-          })
-
-        result.chunks_added++
+      const row = {
+        source_url: source.url,
+        source_name: source.name,
+        section_reference: sectionRef,
+        content: chunk,
+        embedding: JSON.stringify(embedding),
+        content_hash: hash,
+        last_fetched_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
-      // Rate limit: small delay between embedding calls
-      await new Promise(resolve => setTimeout(resolve, 200))
+      if (existing) {
+        const { error: updateErr } = await supabase
+          .from('knowledge_base')
+          .update(row)
+          .eq('id', existing.id)
+
+        if (updateErr) {
+          console.error(`[KB Ingest] Update failed for ${sectionRef}:`, updateErr.message)
+        } else {
+          result.chunks_updated++
+        }
+      } else {
+        const { error: insertErr } = await supabase
+          .from('knowledge_base')
+          .insert({ ...row, created_at: new Date().toISOString() })
+
+        if (insertErr) {
+          console.error(`[KB Ingest] Insert failed for ${sectionRef}:`, insertErr.message)
+        } else {
+          result.chunks_added++
+        }
+      }
     }
   } catch (err) {
     result.error = err instanceof Error ? err.message : 'Unknown error'
