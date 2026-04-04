@@ -23,9 +23,7 @@ const seisQuestions: Question[] = [
     id: "uk_incorporated",
     question: "Is your company incorporated in the UK?",
     hint: "Your company must be registered with Companies House.",
-    disqualifies: "both",
-    disqualifyOn: "no",
-    disqualifyMessage: "Your company must be incorporated in the UK to qualify for SEIS or EIS.",
+    disqualifyOn: "no", // does not disqualify — triggers follow-up instead
   },
   {
     id: "not_listed",
@@ -50,14 +48,6 @@ const seisQuestions: Question[] = [
     disqualifies: "both",
     disqualifyOn: "no",
     disqualifyMessage: "Your trade must be a qualifying trade under HMRC rules. Certain activities like property development, financial services, and leasing are excluded.",
-  },
-  {
-    id: "uk_establishment",
-    question: "Does your company have a permanent establishment in the UK?",
-    hint: "This means a fixed place of business in the UK such as an office or premises.",
-    disqualifies: "both",
-    disqualifyOn: "no",
-    disqualifyMessage: "Your company must have a permanent establishment in the UK.",
   },
   {
     id: "seis_age",
@@ -183,11 +173,29 @@ export default function EligibilityPage() {
   const [complexSubmitting, setComplexSubmitting] = useState(false);
   const [complexSubmitted, setComplexSubmitted] = useState(false);
 
+  const ukEstablishmentQuestion: Question = {
+    id: "uk_establishment",
+    question: "Does your company have a permanent establishment in the UK?",
+    hint: "A permanent establishment is a fixed place of business in the UK through which the company carries out its trade, such as an office, branch or factory.",
+    disqualifies: "both",
+    disqualifyOn: "no",
+    disqualifyMessage: "Your company must be incorporated in the UK or have a permanent establishment in the UK to qualify for SEIS or EIS.",
+  };
+
   const getQuestions = (): Question[] => {
     let qs: Question[];
-    if (scheme === "seis") qs = seisQuestions;
-    else if (scheme === "eis") qs = [...seisQuestions.slice(0, 5), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
+    if (scheme === "seis") qs = [...seisQuestions];
+    else if (scheme === "eis") qs = [...seisQuestions.slice(0, 4), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
     else qs = [...seisQuestions, ...eisOnlyQuestions];
+
+    // Insert uk_establishment follow-up after uk_incorporated if answered "no"
+    if (answers.uk_incorporated === "no") {
+      const ukIncIdx = qs.findIndex(q => q.id === "uk_incorporated");
+      if (ukIncIdx !== -1) {
+        qs.splice(ukIncIdx + 1, 0, ukEstablishmentQuestion);
+      }
+    }
+
     // Add complexity detection questions at the end
     return [...qs, ...complexityQuestions];
   };

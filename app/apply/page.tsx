@@ -1086,10 +1086,11 @@ export default function ApplyPage() {
                   </div>
                 </div>
                 <div className={fieldClass}>
-                  <label className={labelClass}>How does the company meet the permanent establishment requirement?</label>
+                  <label className={labelClass}>Enter details of how the company meets the permanent establishment requirement</label>
                   <textarea className={textareaClass} rows={4} value={data.establishmentNarrative}
                     onChange={e => set("establishmentNarrative", e.target.value)}
-                    placeholder="Explain how the company has a fixed place of business in the UK..." />
+                    placeholder="Describe the fixed UK address or place of business through which the company carries out its trade..." />
+                  <p className={hintClass}>Describe the fixed UK address or place of business through which the company carries out its trade.</p>
                   <Err field="establishmentNarrative" {...errProps} />
                 </div>
               </>
