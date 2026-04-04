@@ -169,6 +169,7 @@ export default function EligibilityPage() {
   const [answers, setAnswers] = useState<Answers>({});
   const [disqualified, setDisqualified] = useState<{ message: string; scheme: string } | null>(null);
   const [softDisqualified, setSoftDisqualified] = useState<{ message: string } | null>(null);
+  const [seisAmountInterstitial, setSeisAmountInterstitial] = useState(false);
   const [email, setEmail] = useState("");
   const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -318,6 +319,12 @@ export default function EligibilityPage() {
         return;
       }
 
+      // If on SEIS-only track and hit seis_amount, show interstitial with option to switch to both
+      if (scheme === "seis" && q.id === "seis_amount") {
+        setSeisAmountInterstitial(true);
+        return;
+      }
+
       const schemeName =
         q.disqualifies === "both"
           ? scheme === "seis" ? "SEIS" : scheme === "eis" ? "EIS" : "SEIS and EIS"
@@ -336,6 +343,45 @@ export default function EligibilityPage() {
 
   const continueAsEisOnly = () => {
     transitionToEis(answers);
+  };
+
+  const continueAsBoth = () => {
+    // Switch to "both" track, carrying all answers forward
+    setScheme("both");
+    setSeisAmountInterstitial(false);
+    // The seis_amount answer "no" is already stored. On the "both" track,
+    // handleAnswer will detect it as a soft SEIS disqualifier on the next render.
+    // We need to re-trigger the question flow from the current position.
+    // Since scheme changed, getQuestions() will rebuild with "both" questions.
+    // We need to find the seis_amount position in the new list and advance past it.
+    const bothQs = (() => {
+      const eisToSeisMap: Record<string, string> = {
+        eis_age: "seis_age", eis_employees: "seis_employees",
+        eis_assets: "seis_assets", eis_amount: "seis_amount",
+      };
+      const filteredEis = eisOnlyQuestions.filter(q => {
+        const seisEquiv = eisToSeisMap[q.id];
+        if (seisEquiv && answers[seisEquiv] === "yes") return false;
+        return true;
+      });
+      let qs = [...seisQuestions, ...filteredEis];
+      if (answers.uk_incorporated === "no") {
+        const idx = qs.findIndex(q => q.id === "uk_incorporated");
+        if (idx !== -1) qs.splice(idx + 1, 0, ukEstablishmentQuestion);
+      }
+      if (answers.not_controlled === "no") {
+        const idx = qs.findIndex(q => q.id === "not_controlled");
+        if (idx !== -1) qs.splice(idx + 1, 0, qualifyingSubsidiaryQuestion);
+      }
+      return [...qs, ...dataQuestions, ...complexityQuestions];
+    })();
+
+    // Find first unanswered question after seis_amount
+    const firstUnanswered = bothQs.findIndex(q => answers[q.id] === undefined || answers[q.id] === null);
+    setCurrentQ(firstUnanswered >= 0 ? firstUnanswered : bothQs.length - 1);
+    setStep("questions");
+    setTransitionMessage("We have switched you to the combined SEIS and EIS track. Continuing your check now.");
+    setTimeout(() => setTransitionMessage(null), 5000);
   };
 
   const handleEmailSubmit = async (source: string) => {
@@ -372,6 +418,7 @@ export default function EligibilityPage() {
     setDisqualified(null);
     setSoftDisqualified(null);
     setTransitionMessage(null);
+    setSeisAmountInterstitial(false);
     setEmail("");
     setEmailSubmitted(false);
     setEmailError("");
@@ -503,8 +550,47 @@ export default function EligibilityPage() {
           </div>
         )}
 
+        {/* SEIS AMOUNT INTERSTITIAL */}
+        {step === "questions" && seisAmountInterstitial && (
+          <div>
+            <div className="w-12 h-12 rounded-full bg-[#fff8e6] border border-[#f5d88a] flex items-center justify-center text-xl mb-6">!</div>
+            <h2 className="font-serif text-[clamp(24px,3vw,36px)] leading-tight tracking-tight mb-4">
+              Only the first £250,000 of your raise may qualify for SEIS.
+            </h2>
+            <p className="text-sm text-[#666] leading-relaxed mb-8">
+              If you are raising more than £250,000, you have two options:
+            </p>
+            <div className="space-y-4">
+              <div className="border border-[#0d7a5f] rounded-xl p-5 bg-white">
+                <p className="text-sm font-medium text-[#1a1a18] mb-2">Check eligibility for both SEIS and EIS</p>
+                <p className="text-sm text-[#666] leading-relaxed mb-4">
+                  Check eligibility for SEIS on the first £250,000 and EIS on the remainder. We will carry your answers forward.
+                </p>
+                <button
+                  onClick={continueAsBoth}
+                  className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors"
+                >
+                  Continue with SEIS and EIS
+                </button>
+              </div>
+              <div className="border border-[#e8e8e4] rounded-xl p-5 bg-white">
+                <p className="text-sm font-medium text-[#1a1a18] mb-2">Go back and adjust</p>
+                <p className="text-sm text-[#666] leading-relaxed mb-4">
+                  If you are raising £250,000 or less under SEIS, go back and update your answer.
+                </p>
+                <button
+                  onClick={() => { setSeisAmountInterstitial(false); setAnswers(prev => { const a = { ...prev }; delete a.seis_amount; return a; }); }}
+                  className="w-full border border-[#e8e8e4] text-[#888] py-3 rounded-lg text-sm font-medium hover:border-[#0d7a5f] hover:text-[#0d7a5f] transition-colors"
+                >
+                  Go back
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* STEP 2: QUESTIONS */}
-        {step === "questions" && (
+        {step === "questions" && !seisAmountInterstitial && (
           <div>
             {transitionMessage && (
               <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-6">
