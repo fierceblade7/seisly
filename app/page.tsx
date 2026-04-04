@@ -133,7 +133,7 @@ export default function Home() {
         <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
           HMRC-ready in under an hour.{" "}
           <strong className="text-[#1a1a18] font-medium">No lawyers. No accountants. No monthly plans.</strong>{" "}
-          Built by the founder of the UK&apos;s first SEIS fund.
+          Built by the founder of the UK&apos;s first SEIS fund, working with the scheme since 2012.
         </p>
         <div className="flex gap-3 justify-center flex-wrap mb-3">
           <Link href="/eligibility">
