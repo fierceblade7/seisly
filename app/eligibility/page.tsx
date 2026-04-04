@@ -81,10 +81,10 @@ const seisQuestions: Question[] = [
   },
   {
     id: "seis_no_prior",
-    question: "Have you not previously raised investment under EIS or a VCT before carrying on any trade?",
+    question: "Have you previously raised investment under EIS or a VCT before carrying on any trade?",
     hint: "If you raised EIS or VCT funding before your company started trading, you cannot then use SEIS.",
     disqualifies: "seis",
-    disqualifyOn: "no",
+    disqualifyOn: "yes",
     disqualifyMessage: "Companies that received EIS or VCT investment before starting to trade cannot use SEIS.",
   },
   {
@@ -516,12 +516,21 @@ export default function EligibilityPage() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => handleAnswer("yes")} className="border border-[#e8e8e4] bg-white rounded-xl py-5 text-sm font-medium text-[#1a1a18] hover:border-[#0d7a5f] hover:bg-[#f0faf6] transition-all">
-                Yes
-              </button>
-              <button onClick={() => handleAnswer("no")} className="border border-[#e8e8e4] bg-white rounded-xl py-5 text-sm font-medium text-[#1a1a18] hover:border-[#e55] hover:bg-[#fff5f5] transition-all">
-                No
-              </button>
+              {(() => {
+                const q = questions[currentQ];
+                const yesIsDisqualifier = q.disqualifyOn === "yes" && !!q.disqualifies;
+                const noIsDisqualifier = q.disqualifyOn === "no" && !!q.disqualifies;
+                return (
+                  <>
+                    <button onClick={() => handleAnswer("yes")} className={`border border-[#e8e8e4] bg-white rounded-xl py-5 text-sm font-medium text-[#1a1a18] transition-all ${yesIsDisqualifier ? "hover:border-[#e55] hover:bg-[#fff5f5]" : "hover:border-[#0d7a5f] hover:bg-[#f0faf6]"}`}>
+                      Yes
+                    </button>
+                    <button onClick={() => handleAnswer("no")} className={`border border-[#e8e8e4] bg-white rounded-xl py-5 text-sm font-medium text-[#1a1a18] transition-all ${noIsDisqualifier ? "hover:border-[#e55] hover:bg-[#fff5f5]" : "hover:border-[#0d7a5f] hover:bg-[#f0faf6]"}`}>
+                      No
+                    </button>
+                  </>
+                );
+              })()}
             </div>
             <p className="text-xs text-[#aaa] mt-6 text-center">
               Answer based on your current situation. You can always come back and re-run the check.
