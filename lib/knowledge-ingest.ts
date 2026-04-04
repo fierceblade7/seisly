@@ -96,8 +96,15 @@ export async function queryKnowledgeBase(query: string, limit: number = 10): Pro
   }
 }
 
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+
 interface IngestResult {
   source: string
+  url: string
+  fetch_ok: boolean
+  fetch_status: number | null
+  content_length: number
+  chunks_total: number
   chunks_added: number
   chunks_updated: number
   chunks_skipped: number
@@ -107,32 +114,61 @@ interface IngestResult {
 export async function ingestSource(source: { url: string; name: string }): Promise<IngestResult> {
   const result: IngestResult = {
     source: source.name,
+    url: source.url,
+    fetch_ok: false,
+    fetch_status: null,
+    content_length: 0,
+    chunks_total: 0,
     chunks_added: 0,
     chunks_updated: 0,
     chunks_skipped: 0,
   }
 
   try {
-    // Fetch the page
-    const res = await fetch(source.url, {
-      headers: { 'User-Agent': 'Seisly Knowledge Ingestion Bot (seisly.com)' },
-    })
+    // Fetch the page with browser UA and 30s timeout
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30000)
 
+    let res: Response
+    try {
+      res = await fetch(source.url, {
+        headers: {
+          'User-Agent': BROWSER_UA,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-GB,en;q=0.9',
+        },
+        signal: controller.signal,
+      })
+    } catch (fetchErr) {
+      const msg = fetchErr instanceof Error ? fetchErr.message : 'Unknown fetch error'
+      console.error(`[KB Ingest] Fetch failed for ${source.url}: ${msg}`)
+      result.error = `Fetch failed: ${msg}`
+      return result
+    } finally {
+      clearTimeout(timeout)
+    }
+
+    result.fetch_status = res.status
     if (!res.ok) {
+      console.error(`[KB Ingest] HTTP ${res.status} for ${source.url}`)
       result.error = `HTTP ${res.status}`
       return result
     }
+    result.fetch_ok = true
 
     const html = await res.text()
     const text = stripHtml(html)
+    result.content_length = text.length
 
-    if (text.length < 100) {
-      result.error = 'Content too short after stripping HTML'
+    if (text.length < 200) {
+      console.warn(`[KB Ingest] Content too short (${text.length} chars) for ${source.url} - likely blocked or error page`)
+      result.error = `Content too short (${text.length} chars) - likely blocked`
       return result
     }
 
     // Chunk the content
     const chunks = chunkText(text)
+    result.chunks_total = chunks.length
 
     // Process each chunk
     for (let i = 0; i < chunks.length; i++) {
