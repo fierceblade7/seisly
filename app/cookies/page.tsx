@@ -1,4 +1,9 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy - Seisly",
+};
 
 export default function CookiePolicy() {
   return (

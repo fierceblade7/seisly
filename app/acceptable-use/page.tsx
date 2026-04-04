@@ -1,4 +1,9 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Acceptable Use Policy - Seisly",
+};
 
 export default function AcceptableUsePolicy() {
   return (

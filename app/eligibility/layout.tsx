@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Check SEIS/EIS eligibility - Seisly",
-  description: "Check if your company qualifies for SEIS or EIS advance assurance in 2 minutes. Free, instant, no account needed.",
+  title: "Check Your SEIS and EIS Eligibility - Seisly",
+  description: "Find out if your startup qualifies for SEIS or EIS in under 2 minutes. Free eligibility check with instant results.",
 };
 
 export default function EligibilityLayout({ children }: { children: React.ReactNode }) {

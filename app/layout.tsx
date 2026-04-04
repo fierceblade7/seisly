@@ -17,17 +17,21 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Seisly - SEIS and EIS advance assurance from £149",
-  description:
-    "Get SEIS or EIS advance assurance from £149. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
-  keywords: "SEIS, EIS, advance assurance, HMRC, startup funding, UK startup",
+  title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
+  description: "AI-powered SEIS and EIS advance assurance for UK startups. Seisly prepares and submits your application to HMRC as your authorised agent. From £149.",
+  metadataBase: new URL("https://seisly.com"),
   openGraph: {
-    title: "Seisly - SEIS and EIS advance assurance from £149",
-    description: "Get SEIS or EIS advance assurance from £149. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
+    title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
+    description: "AI-powered SEIS and EIS advance assurance for UK startups. From £149.",
     url: "https://seisly.com",
     siteName: "Seisly",
     locale: "en_GB",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
+    description: "AI-powered SEIS and EIS advance assurance for UK startups. From £149.",
   },
 };
 
@@ -38,6 +42,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Seisly",
+              "url": "https://seisly.com",
+              "logo": "https://seisly.com/icon.svg",
+              "description": "AI-powered SEIS and EIS advance assurance for UK startups. Prepared and submitted to HMRC on your behalf.",
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "71-75 Shelton Street",
+                "addressLocality": "London",
+                "addressRegion": "Covent Garden",
+                "postalCode": "WC2H 9JQ",
+                "addressCountry": "GB"
+              }
+            })
+          }}
+        />
+      </head>
       <body className={`${instrumentSerif.variable} ${dmSans.variable} antialiased`}>
         {children}
         <CookieBanner />
