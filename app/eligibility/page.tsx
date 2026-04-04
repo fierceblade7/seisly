@@ -132,14 +132,18 @@ const eisOnlyQuestions: Question[] = [
   },
 ];
 
-// Non-disqualifying questions that flag complexity
-const complexityQuestions: Question[] = [
+// Data-gathering question (not a complexity flag, carried forward silently)
+const dataQuestions: Question[] = [
   {
     id: "has_previous_vcs",
     question: "Has the company previously received any SEIS, EIS, VCT, or SITR investment?",
-    hint: "This includes any venture capital scheme investment or risk finance State aid the company has received before.",
+    hint: "This includes any venture capital scheme investment or risk finance State aid the company has received before. This does not affect your eligibility but helps us prepare your application correctly.",
     disqualifyOn: "no", // never disqualifies
   },
+];
+
+// Non-disqualifying questions that flag complexity
+const complexityQuestions: Question[] = [
   {
     id: "claims_kic",
     question: "Is the company applying as a Knowledge Intensive Company (KIC)?",
@@ -212,13 +216,12 @@ export default function EligibilityPage() {
       }
     }
 
-    // Add complexity detection questions at the end
-    return [...qs, ...complexityQuestions];
+    // Add data-gathering and complexity detection questions at the end
+    return [...qs, ...dataQuestions, ...complexityQuestions];
   };
 
   const getComplexityFlags = (): string[] => {
     const flags: string[] = [];
-    if (answers.has_previous_vcs === "yes") flags.push("Previous VCS investment");
     if (answers.claims_kic === "yes") flags.push("Knowledge Intensive Company (KIC)");
     if (answers.non_uk_operations === "yes") flags.push("Non-UK operations or investors");
     return flags;
@@ -276,7 +279,7 @@ export default function EligibilityPage() {
       const idx = eisQs.findIndex(q => q.id === "not_controlled");
       if (idx !== -1) eisQs.splice(idx + 1, 0, qualifyingSubsidiaryQuestion);
     }
-    eisQs = [...eisQs, ...complexityQuestions];
+    eisQs = [...eisQs, ...dataQuestions, ...complexityQuestions];
 
     // Find first unanswered question
     const firstUnanswered = eisQs.findIndex(q => eisAnswers[q.id] === undefined || eisAnswers[q.id] === null);
