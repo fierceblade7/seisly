@@ -36,10 +36,8 @@ const seisQuestions: Question[] = [
   {
     id: "not_controlled",
     question: "Is your company independent and not a subsidiary or controlled by another company?",
-    hint: "Another company must not own more than 50% of your shares.",
-    disqualifies: "both",
-    disqualifyOn: "no",
-    disqualifyMessage: "Subsidiaries and companies controlled by another company do not qualify.",
+    hint: "You can be in a group and still qualify, as long as your company is not controlled by a non-qualifying company. If there is a group, the SEIS/EIS issuer is usually the top UK holding company. Any subsidiaries below it must be qualifying subsidiaries - more than 50% owned by the parent and carrying on qualifying trading activities. Employee numbers and gross assets are counted across the whole group.",
+    disqualifyOn: "no", // does not disqualify directly — triggers follow-up
   },
   {
     id: "qualifying_trade",
@@ -60,7 +58,7 @@ const seisQuestions: Question[] = [
   {
     id: "seis_employees",
     question: "Does your company have fewer than 25 full-time equivalent employees?",
-    hint: "Count part-time employees proportionally. Include all group employees if you have subsidiaries.",
+    hint: "Include directors as employees. Count part-time staff proportionally based on hours worked. If your company is in a group, count all employees across the group.",
     disqualifies: "seis",
     disqualifyOn: "no",
     disqualifyMessage: "SEIS requires fewer than 25 full-time equivalent employees.",
@@ -183,6 +181,15 @@ export default function EligibilityPage() {
     disqualifyMessage: "Your company must be incorporated in the UK or have a permanent establishment in the UK to qualify for SEIS or EIS.",
   };
 
+  const qualifyingSubsidiaryQuestion: Question = {
+    id: "qualifying_subsidiary",
+    question: "Is your company a qualifying subsidiary within a group structure?",
+    hint: "A qualifying subsidiary is more than 50% owned by the parent company, not controlled by any outside party, and carries on qualifying trading activities with no more than 20% excluded activities.",
+    disqualifies: "both",
+    disqualifyOn: "no",
+    disqualifyMessage: "Your company must not be controlled by a non-qualifying company to be eligible for SEIS or EIS.",
+  };
+
   const getQuestions = (): Question[] => {
     let qs: Question[];
     if (scheme === "seis") qs = [...seisQuestions];
@@ -194,6 +201,14 @@ export default function EligibilityPage() {
       const ukIncIdx = qs.findIndex(q => q.id === "uk_incorporated");
       if (ukIncIdx !== -1) {
         qs.splice(ukIncIdx + 1, 0, ukEstablishmentQuestion);
+      }
+    }
+
+    // Insert qualifying_subsidiary follow-up after not_controlled if answered "no"
+    if (answers.not_controlled === "no") {
+      const ctrlIdx = qs.findIndex(q => q.id === "not_controlled");
+      if (ctrlIdx !== -1) {
+        qs.splice(ctrlIdx + 1, 0, qualifyingSubsidiaryQuestion);
       }
     }
 
@@ -214,18 +229,74 @@ export default function EligibilityPage() {
   const questions = getQuestions();
   const progress = step === "scheme" ? 0 : step === "result" ? 100 : Math.round((currentQ / questions.length) * 100);
 
-  // Questions that trigger soft SEIS disqualification (continue to EIS) when on "both" track
-  const softSeisDisqualifiers = ["seis_age", "seis_amount", "seis_assets"];
+  // SEIS-only disqualifiers that allow EIS continuation on "both" track
+  const softSeisDisqualifiers = ["seis_age", "seis_amount", "seis_assets", "seis_employees"];
+
+  // Inline transition message when switching from SEIS+EIS to EIS-only mid-flow
+  const [transitionMessage, setTransitionMessage] = useState<string | null>(null);
+
+  // Mapping: SEIS answer "yes" (passes SEIS) automatically satisfies EIS too
+  // SEIS answer "no" (fails SEIS) needs re-asking against EIS threshold
+  const seisToEisCarryForward: Record<string, string> = {
+    seis_age: "eis_age",
+    seis_employees: "eis_employees",
+    seis_assets: "eis_assets",
+    seis_amount: "eis_amount",
+  };
+
+  const transitionToEis = (updatedAnswers: Answers) => {
+    // Build EIS answers from existing shared + threshold carry-forward
+    const eisAnswers = { ...updatedAnswers };
+
+    // For threshold-different pairs: if SEIS answer was "yes" (passed SEIS),
+    // it also passes EIS (lower threshold passes higher). Auto-answer EIS equivalent.
+    // If SEIS answer was "no" (failed SEIS), leave EIS unanswered so it gets re-asked.
+    for (const [seisId, eisId] of Object.entries(seisToEisCarryForward)) {
+      if (eisAnswers[seisId] === "yes") {
+        eisAnswers[eisId] = "yes";
+      }
+      // If "no", don't carry forward — will be re-asked with EIS threshold
+    }
+
+    // Remove SEIS-only question answers that have no EIS equivalent
+    delete eisAnswers.seis_no_prior;
+
+    setAnswers(eisAnswers);
+    setScheme("eis");
+    setSoftDisqualified(null);
+
+    // Build the new EIS question list (scheme will be "eis" after setState)
+    // We need to compute it manually since scheme hasn't updated yet in this render
+    let eisQs = [...seisQuestions.slice(0, 4), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
+    if (eisAnswers.uk_incorporated === "no") {
+      const idx = eisQs.findIndex(q => q.id === "uk_incorporated");
+      if (idx !== -1) eisQs.splice(idx + 1, 0, ukEstablishmentQuestion);
+    }
+    if (eisAnswers.not_controlled === "no") {
+      const idx = eisQs.findIndex(q => q.id === "not_controlled");
+      if (idx !== -1) eisQs.splice(idx + 1, 0, qualifyingSubsidiaryQuestion);
+    }
+    eisQs = [...eisQs, ...complexityQuestions];
+
+    // Find first unanswered question
+    const firstUnanswered = eisQs.findIndex(q => eisAnswers[q.id] === undefined || eisAnswers[q.id] === null);
+    setCurrentQ(firstUnanswered >= 0 ? firstUnanswered : eisQs.length - 1);
+    setStep("questions");
+
+    // Show inline transition message briefly
+    setTransitionMessage("That means you do not qualify for SEIS, but you may still qualify for EIS. Continuing your check now.");
+    setTimeout(() => setTransitionMessage(null), 5000);
+  };
 
   const handleAnswer = (answer: Answer) => {
     const q = questions[currentQ];
-    setAnswers({ ...answers, [q.id]: answer });
+    const updatedAnswers = { ...answers, [q.id]: answer };
+    setAnswers(updatedAnswers);
 
     if (answer === q.disqualifyOn && q.disqualifies) {
-      // If on "both" track and this only disqualifies SEIS, show soft screen
+      // If on "both" track and this only disqualifies SEIS, transition inline to EIS
       if (scheme === "both" && q.disqualifies === "seis" && softSeisDisqualifiers.includes(q.id)) {
-        setSoftDisqualified({ message: q.disqualifyMessage || "" });
-        setStep("result");
+        transitionToEis(updatedAnswers);
         return;
       }
 
@@ -246,10 +317,7 @@ export default function EligibilityPage() {
   };
 
   const continueAsEisOnly = () => {
-    setScheme("eis");
-    setSoftDisqualified(null);
-    setCurrentQ(0);
-    setStep("questions");
+    transitionToEis(answers);
   };
 
   const handleEmailSubmit = async (source: string) => {
@@ -285,6 +353,7 @@ export default function EligibilityPage() {
     setAnswers({});
     setDisqualified(null);
     setSoftDisqualified(null);
+    setTransitionMessage(null);
     setEmail("");
     setEmailSubmitted(false);
     setEmailError("");
@@ -419,6 +488,11 @@ export default function EligibilityPage() {
         {/* STEP 2: QUESTIONS */}
         {step === "questions" && (
           <div>
+            {transitionMessage && (
+              <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-4 mb-6">
+                <p className="text-sm text-[#8a6500] leading-relaxed">{transitionMessage}</p>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-8">
               <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium">
                 Question {currentQ + 1} of {questions.length}
@@ -473,7 +547,7 @@ export default function EligibilityPage() {
                 </div>
 
                 <p className="text-sm text-[#666] leading-relaxed mb-8">
-                  This condition only applies to SEIS. Your company may still qualify for EIS advance assurance. You can continue the eligibility check for EIS only.
+                  Based on your answers, you do not qualify for SEIS, but you may qualify for EIS. We have carried your answers forward, just confirm a few additional details.
                 </p>
 
                 <div className="space-y-3">
