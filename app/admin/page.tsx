@@ -198,6 +198,7 @@ export default function AdminPage() {
 
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
+  const [opsRefreshing, setOpsRefreshing] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
@@ -761,7 +762,11 @@ export default function AdminPage() {
                 <h1 className="font-serif text-2xl">Ops</h1>
                 <p className="text-sm text-[#888] mt-1">Auto-refreshes every 60 seconds</p>
               </div>
-              <button onClick={fetchOps} className="text-xs text-[#0d7a5f] hover:underline">Refresh now</button>
+              <button onClick={async () => { setOpsRefreshing(true); await fetchOps(); setOpsRefreshing(false); }} disabled={opsRefreshing}
+                className="text-xs text-[#0d7a5f] hover:underline disabled:opacity-50 flex items-center gap-1">
+                {opsRefreshing && <div className="w-3 h-3 border border-[#0d7a5f] border-t-transparent rounded-full animate-spin" />}
+                {opsRefreshing ? "Refreshing..." : "Refresh now"}
+              </button>
             </div>
 
             {!opsData ? (

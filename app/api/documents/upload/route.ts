@@ -6,6 +6,32 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+
+const ALLOWED_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg',
+  'image/png',
+])
+
+const ALLOWED_EXTENSIONS = new Set([
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png',
+])
+
+function sanitiseFilename(name: string): string {
+  // Extract extension
+  const lastDot = name.lastIndexOf('.')
+  const ext = lastDot >= 0 ? name.slice(lastDot) : ''
+  const base = lastDot >= 0 ? name.slice(0, lastDot) : name
+  // Strip non-alphanumeric, dot, hyphen, underscore
+  const cleanBase = base.replace(/[^a-zA-Z0-9._-]/g, '_')
+  return cleanBase + ext.toLowerCase()
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -18,9 +44,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
+    }
+
+    // Validate file type by MIME type
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json({ error: 'File type not allowed. Please upload PDF, Word, Excel, JPEG or PNG files only.' }, { status: 400 })
+    }
+
+    // Validate file extension
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return NextResponse.json({ error: 'File type not allowed. Please upload PDF, Word, Excel, JPEG or PNG files only.' }, { status: 400 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const fileName = `${email}/${scheme}/${docType}/${Date.now()}-${file.name}`
+    const safeName = sanitiseFilename(file.name)
+    const fileName = `${email}/${scheme}/${docType}/${Date.now()}-${safeName}`
 
     const { error: uploadError } = await supabase.storage
       .from('application-documents')
@@ -39,7 +82,7 @@ export async function POST(request: NextRequest) {
       email,
       scheme,
       doc_type: docType,
-      file_name: file.name,
+      file_name: safeName,
       file_url: publicUrl,
       uploaded_at: new Date().toISOString(),
     }, { onConflict: 'email,scheme,doc_type' })

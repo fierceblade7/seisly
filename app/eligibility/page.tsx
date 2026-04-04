@@ -526,9 +526,9 @@ export default function EligibilityPage() {
             </p>
             <div className="space-y-3">
               {[
-                { value: "seis" as Scheme, title: "SEIS only", price: "£149 + VAT", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Most common for pre-seed" },
-                { value: "eis" as Scheme, title: "EIS only", price: "£149 + VAT", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Series A and beyond" },
-                { value: "both" as Scheme, title: "SEIS and EIS", price: "£199 + VAT", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
+                { value: "seis" as Scheme, title: "SEIS only", price: "£149", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Most common for pre-seed" },
+                { value: "eis" as Scheme, title: "EIS only", price: "£149", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Series A and beyond" },
+                { value: "both" as Scheme, title: "SEIS and EIS", price: "£199", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
               ].map((option) => (
                 <button
                   key={option.value}

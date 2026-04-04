@@ -22,7 +22,7 @@ export default function Home() {
     },
     {
       q: "What if HMRC rejects my application?",
-      a: "We only submit applications we are confident meet all HMRC qualifying conditions. In the unlikely event HMRC rejects an application we submitted, we will refund your fee in full, no questions asked. If resubmission is needed due to changed circumstances or additional information, we charge £50 + VAT per resubmission attempt.",
+      a: "We only submit applications we are confident meet all HMRC qualifying conditions. In the unlikely event HMRC rejects an application we submitted, we will refund your fee in full, no questions asked. If resubmission is needed due to changed circumstances or additional information, we charge £50 per resubmission attempt.",
     },
     {
       q: "How does the money-back guarantee work?",
@@ -30,7 +30,7 @@ export default function Home() {
     },
     {
       q: "What if my application needs to be resubmitted?",
-      a: "If HMRC rejects your application and resubmission is required, we charge £50 + VAT per resubmission attempt. If the rejection was due to an error on our part rather than your company not qualifying, we resubmit free of charge as part of our money-back guarantee.",
+      a: "If HMRC rejects your application and resubmission is required, we charge £50 per resubmission attempt. If the rejection was due to an error on our part rather than your company not qualifying, we resubmit free of charge as part of our money-back guarantee.",
     },
     {
       q: "How long does HMRC take to respond?",
@@ -51,10 +51,10 @@ export default function Home() {
   ];
 
   const vsRows = [
-    { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
-    { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£149 + VAT" },
-    { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£199 + VAT" },
-    { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 + VAT (separate product)" },
+    { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£149" },
+    { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£149" },
+    { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£199" },
+    { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 (separate product)" },
     { label: "Investor finder tool", a: "Not offered", b: "~£600 + VAT", c: <span>£49/mo (<a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="hover:underline">Novar</a>)</span> },
     { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
     { label: "Instant eligibility check", a: "✗", b: "✓", c: "✓" },
@@ -128,7 +128,7 @@ export default function Home() {
           <em className="text-[#0d7a5f] not-italic font-serif">Seisly done.</em>
         </h1>
         <p className="font-serif text-[clamp(24px,3vw,36px)] text-[#1a1a18] mb-6 tracking-tight">
-          From &pound;149 + VAT. Not &pound;2,000.
+          From &pound;149. Not &pound;2,000.
         </p>
         <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
           HMRC-ready in under an hour.{" "}
@@ -172,7 +172,7 @@ export default function Home() {
             <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; Seisly</div>
             <div className="text-sm font-medium text-[#0d7a5f] mb-3">All-in, no subscription</div>
             <div className="font-serif text-[28px] text-[#0d7a5f] leading-none">&pound;149</div>
-            <div className="text-[11px] text-[#aaa] mt-1">+ VAT. One-time. Done.</div>
+            <div className="text-[11px] text-[#aaa] mt-1">One-time. Done.</div>
           </div>
         </div>
         <p className="text-center text-sm text-[#0a5c47] font-medium mt-4">
@@ -211,7 +211,7 @@ export default function Home() {
             <ul className="space-y-2 mb-6">
               <li className="flex justify-between text-sm">
                 <span className="text-[#666]">SEIS advance assurance</span>
-                <span className="font-medium text-[#0d7a5f]">£149 + VAT</span>
+                <span className="font-medium text-[#0d7a5f]">£149</span>
               </li>
               <li className="flex justify-between text-sm">
                 <span className="text-[#666]"><a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a> (limited places)</span>
@@ -229,7 +229,7 @@ export default function Home() {
             <div className="border-t border-[#c0e8db] pt-4 flex justify-between items-baseline">
               <span className="text-sm font-medium text-[#0a5c47]">Total</span>
               <div className="text-right">
-                <span className="font-serif text-2xl text-[#0d7a5f]">&pound;149 <span className="text-sm font-sans text-[#aaa]">+ VAT</span></span>
+                <span className="font-serif text-2xl text-[#0d7a5f]">&pound;149</span>
                 <p className="text-xs text-[#0d7a5f] mt-0.5">including Novar for Startups free for 3 months*</p>
               </div>
             </div>
@@ -315,27 +315,30 @@ export default function Home() {
           <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">The honest comparison</p>
           <h2 className="font-serif text-[clamp(30px,3.5vw,46px)] leading-tight tracking-tight mb-2">Seisly vs everyone else</h2>
           <p className="text-base text-[#666] mb-10 font-light">We are not the only option. We are just the best one.</p>
-          <div className="overflow-x-auto">
+          <div>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b-2 border-[#f0f0ec]">
                   <th className="text-left py-3 px-4 text-[11px] text-[#aaa] uppercase tracking-wide font-medium"></th>
-                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">Lawyers and accountants</th>
-                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium">Online legal platforms</th>
+                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium hidden md:table-cell">Lawyers and accountants</th>
+                  <th className="text-center py-3 px-4 text-[13px] text-[#1a1a18] font-medium hidden md:table-cell">Online legal platforms</th>
                   <th className="text-center py-3 px-4 text-[13px] text-[#0d7a5f] font-medium">Seisly &#10022;</th>
                 </tr>
               </thead>
               <tbody>
                 {vsRows.map((row) => (
                   <tr key={row.label} className="border-b border-[#f5f5f2]">
-                    <td className="py-4 px-4 text-[#444]">{row.label}</td>
-                    <td className={`py-4 px-4 text-center font-medium ${row.a.includes("✗") ? "text-[#ddd]" : "text-[#ccc]"}`}>{row.a}</td>
-                    <td className={`py-4 px-4 text-center font-medium ${row.b === "✓" ? "text-[#0d7a5f]" : "text-[#ddd]"}`}>{row.b}</td>
-                    <td className="py-4 px-4 text-center font-medium text-[#0d7a5f]">{row.c}</td>
+                    <td className="py-3 px-3 md:py-4 md:px-4 text-[#444] text-xs md:text-sm">{row.label}</td>
+                    <td className={`py-4 px-4 text-center font-medium hidden md:table-cell ${typeof row.a === 'string' && row.a.includes("✗") ? "text-[#ddd]" : "text-[#ccc]"}`}>{row.a}</td>
+                    <td className={`py-4 px-4 text-center font-medium hidden md:table-cell ${row.b === "✓" ? "text-[#0d7a5f]" : "text-[#ddd]"}`}>{row.b}</td>
+                    <td className="py-3 px-3 md:py-4 md:px-4 text-center font-medium text-[#0d7a5f] text-xs md:text-sm">{row.c}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <p className="text-xs text-center text-[#aaa] mt-4 md:hidden">
+              Compare with lawyers (~£2,000+) and online platforms (~£400+ subscription) at seisly.com on desktop.
+            </p>
           </div>
         </div>
       </section>
@@ -358,7 +361,7 @@ export default function Home() {
                 <div className="font-serif text-[42px] leading-none mb-1">
                   <sup className="text-xl font-sans align-super">&pound;</sup>{plan.price}
                 </div>
-                <div className="text-xs text-[#aaa] mb-6">+ VAT. One-time payment.</div>
+                <div className="text-xs text-[#aaa] mb-6">One-time payment.</div>
                 <ul className="space-y-2.5 mb-7">
                   {plan.features.map((f) => (
                     <li key={f} className="flex gap-2 items-start text-sm text-[#555]">
@@ -368,7 +371,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <p className="text-xs text-[#aaa] mt-3 pt-3 border-t border-[#f0f0ec]">
-                  Resubmission if required: £50 + VAT per attempt
+                  Resubmission if required: £50 per attempt
                 </p>
                 <Link href="/eligibility">
                   <button className={`w-full py-3 rounded-lg text-sm font-medium transition-colors border border-[#0d7a5f] ${plan.featured ? "bg-[#0d7a5f] text-white hover:bg-[#0a5c47]" : "text-[#0d7a5f] hover:bg-[#0d7a5f] hover:text-white"}`}>
@@ -379,7 +382,7 @@ export default function Home() {
             ))}
           </div>
           <p className="text-xs text-center text-[#aaa] mt-4">
-            Non-UK companies add £100. Resubmission £50 + VAT if required. Nominee structures coming soon.
+            Non-UK companies add £100. Resubmission £50 if required. Nominee structures coming soon.
           </p>
         </div>
       </section>
@@ -391,7 +394,7 @@ export default function Home() {
             Need to issue investor certificates?
           </p>
           <p className="text-sm text-[#666] leading-relaxed">
-            Once HMRC approves your advance assurance and shares are issued, you will need to submit a compliance statement (SEIS1 or EIS1) and generate investor certificates (SEIS3 or EIS3). This is a separate Seisly product, coming soon, priced at £399 + VAT.
+            Once HMRC approves your advance assurance and shares are issued, you will need to submit a compliance statement (SEIS1 or EIS1) and generate investor certificates (SEIS3 or EIS3). This is a separate Seisly product, coming soon, priced at £399.
           </p>
         </div>
       </div>
@@ -426,7 +429,7 @@ export default function Home() {
         <h2 className="font-serif text-[clamp(36px,5vw,60px)] text-white leading-tight tracking-tight mb-2">
           Need SEIS or EIS<br />advance assurance?
         </h2>
-        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. &pound;149.</p>
+        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. From &pound;149.</p>
         <p className="text-base text-[#9FE1CB] mb-8 font-light">
           Join the founders who skipped the lawyers and accountants,<br className="hidden sm:block" /> saved thousands, and got investor-ready faster.
         </p>

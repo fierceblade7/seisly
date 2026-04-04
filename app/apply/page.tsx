@@ -283,7 +283,7 @@ function Step1CompanyDetails({ data, set, fieldClass, labelClass, inputClass, hi
       <div className={fieldClass}>
         <label className={labelClass}>Which scheme are you applying for?</label>
         <div className="space-y-2">
-          {([["seis", "SEIS only", "£149 + VAT", "Raising up to £250,000"], ["eis", "EIS only", "£149 + VAT", "Raising up to £5 million"], ["both", "SEIS and EIS", "£199 + VAT", "Applying for both schemes"]] as const).map(([val, label, price, desc]) => (
+          {([["seis", "SEIS only", "£149", "Raising up to £250,000"], ["eis", "EIS only", "£149", "Raising up to £5 million"], ["both", "SEIS and EIS", "£199", "Applying for both schemes"]] as const).map(([val, label, price, desc]) => (
             <button key={val} onClick={() => set("scheme", val)}
               className={`w-full text-left border rounded-xl p-4 transition-all ${data.scheme === val ? "border-[#0d7a5f] bg-[#f0faf6]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
               <div className="flex justify-between items-center">
@@ -1137,7 +1137,7 @@ export default function ApplyPage() {
             <div className="mt-8 bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5">
               <p className="text-sm font-medium text-[#0a5c47] mb-2">What happens next</p>
               <p className="text-sm text-[#555] leading-relaxed">
-                Once you confirm, you will be taken to pay £{data.scheme === "seis" ? "149" : data.scheme === "eis" ? "149" : "199"} + VAT. After payment, you will need to upload your supporting documents (business plan, accounts, articles of association, shareholder list, and investor documents). We will then prepare your complete HMRC submission and submit it on your behalf as your agent.
+                Once you confirm, you will be taken to pay £{data.scheme === "seis" ? "149" : data.scheme === "eis" ? "149" : "199"}. After payment, you will need to upload your supporting documents (business plan, accounts, articles of association, shareholder list, and investor documents). We will then prepare your complete HMRC submission and submit it on your behalf as your agent.
               </p>
             </div>
 
@@ -1147,7 +1147,7 @@ export default function ApplyPage() {
               </p>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="font-serif text-4xl">&pound;{data.scheme === "seis" ? "149" : data.scheme === "eis" ? "149" : "199"}</span>
-                <span className="text-sm text-[#aaa]">+ VAT. One-time payment.</span>
+                <span className="text-sm text-[#aaa]">One-time payment.</span>
               </div>
               <button
                 onClick={handlePayment}

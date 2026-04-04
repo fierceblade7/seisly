@@ -19,11 +19,11 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Seisly - SEIS and EIS advance assurance from £149",
   description:
-    "Get SEIS or EIS advance assurance from £149 + VAT. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
+    "Get SEIS or EIS advance assurance from £149. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
   keywords: "SEIS, EIS, advance assurance, HMRC, startup funding, UK startup",
   openGraph: {
     title: "Seisly - SEIS and EIS advance assurance from £149",
-    description: "Get SEIS or EIS advance assurance from £149 + VAT. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
+    description: "Get SEIS or EIS advance assurance from £149. AI-powered, human-reviewed, submitted to HMRC on your behalf. Built by the founder of the UK's first SEIS fund.",
     url: "https://seisly.com",
     siteName: "Seisly",
     locale: "en_GB",
