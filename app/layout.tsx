@@ -27,11 +27,20 @@ export const metadata: Metadata = {
     siteName: "Seisly",
     locale: "en_GB",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Seisly - SEIS and EIS Advance Assurance, Done for You",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
     description: "AI-powered SEIS and EIS advance assurance for UK startups. From £149.",
+    images: ["/og-image.png"],
   },
 };
 
