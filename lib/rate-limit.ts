@@ -1,6 +1,11 @@
-// Simple in-memory rate limiter using a Map.
-// Works on Vercel serverless but does not share state across instances.
-// For production at scale, replace with Upstash Redis.
+// WARNING: Per-instance in-memory rate limiter.
+// This does NOT work globally across Vercel serverless instances.
+// Each cold start creates a fresh Map, and concurrent instances
+// each have their own independent rate limit state.
+//
+// TODO: For production scale, replace with Redis-based rate limiting
+// (e.g. @upstash/ratelimit with Upstash Redis) to enforce limits
+// globally across all instances.
 
 interface RateLimitEntry {
   count: number

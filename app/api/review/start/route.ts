@@ -26,12 +26,12 @@ export async function POST(request: NextRequest) {
       .eq('scheme', effectiveScheme)
 
     // Trigger review in background (non-blocking)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
     fetch(`${baseUrl}/api/review/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-internal-secret': process.env.INTERNAL_SECRET || 'seisly-internal',
+        'x-internal-secret': process.env.INTERNAL_SECRET || '',
       },
       body: JSON.stringify({ email, scheme: effectiveScheme }),
     }).catch(err => console.error('Background review trigger failed:', err))

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
         // Create unique Novar promo code for this customer
         try {
-          if (process.env.STRIPE_NOVAR_COUPON_ID && process.env.STRIPE_NOVAR_COUPON_ID !== 'placeholder_for_now') {
+          if (process.env.STRIPE_NOVAR_COUPON_ID) {
             const promoCode = await stripe.promotionCodes.create({
               promotion: { type: 'coupon', coupon: process.env.STRIPE_NOVAR_COUPON_ID },
               code: `NOVAR-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
@@ -66,6 +66,8 @@ export async function POST(request: NextRequest) {
     } else {
       console.error('[Stripe Webhook] Missing metadata - email:', email, 'scheme:', scheme)
     }
+  } else {
+    console.log('[Stripe Webhook] Unhandled event type:', event.type)
   }
 
   return NextResponse.json({ received: true })

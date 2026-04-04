@@ -8,7 +8,9 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   const password = request.headers.get('x-admin-password')
-  if (password !== (process.env.ADMIN_PASSWORD || 'seisly-admin-2026')) {
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  if (password !== adminPassword) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -18,9 +20,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
+    // Whitelist allowed fields
+    const ALLOWED_FIELDS = ['status', 'admin_notes', 'review_overrides', 'review_released']
+    const safeUpdates: Record<string, unknown> = {}
+    for (const key of ALLOWED_FIELDS) {
+      if (key in updates) safeUpdates[key] = updates[key]
+    }
+    if (Object.keys(safeUpdates).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
     const { error } = await supabase
       .from('applications')
-      .update(updates)
+      .update(safeUpdates)
       .eq('email', email)
       .eq('scheme', scheme)
 

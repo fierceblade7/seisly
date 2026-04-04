@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ingestAll } from '@/lib/knowledge-ingest'
 
+// Requires Vercel Pro plan (hobby limit is 60s)
 export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
@@ -8,7 +9,9 @@ export async function POST(request: NextRequest) {
   const cronSecret = request.headers.get('x-cron-secret')
 
   // Allow access via admin password or cron secret
-  const isAdmin = password === (process.env.ADMIN_PASSWORD || 'seisly-admin-2026')
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  const isAdmin = password === adminPassword
   const isCron = cronSecret === process.env.CRON_SECRET
 
   if (!isAdmin && !isCron) {

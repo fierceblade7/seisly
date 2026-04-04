@@ -44,6 +44,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Validate docType against whitelist
+    const ALLOWED_DOC_TYPES = ['business_plan', 'accounts', 'articles', 'shareholder_list', 'investor_documents', 'subscription_agreement']
+    if (!ALLOWED_DOC_TYPES.includes(docType)) {
+      return NextResponse.json({ error: 'Invalid document type.' }, { status: 400 })
+    }
+
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })

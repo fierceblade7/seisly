@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { sanitiseHtml } from '@/lib/sanitise-html'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: 'Seisly <hello@seisly.com>',
       to: 'support@seisly.com',
-      subject: `New application ready for submission - ${application?.company_name || companyName}`,
+      subject: `New application ready for submission - ${sanitiseHtml(application?.company_name || companyName)}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
           <h1 style="font-size: 24px; font-weight: 400; margin-bottom: 16px;">
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888; width: 40%;">Company</td>
-              <td style="padding: 8px 0; font-weight: 500;">${application?.company_name || companyName}</td>
+              <td style="padding: 8px 0; font-weight: 500;">${sanitiseHtml(application?.company_name || companyName)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Scheme</td>
@@ -74,11 +75,11 @@ export async function POST(request: NextRequest) {
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Founder email</td>
-              <td style="padding: 8px 0;">${email}</td>
+              <td style="padding: 8px 0;">${sanitiseHtml(email)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Signatory</td>
-              <td style="padding: 8px 0;">${application?.declared_by_name || name}, ${application?.declared_by_position || ''}</td>
+              <td style="padding: 8px 0;">${sanitiseHtml(application?.declared_by_name || name)}, ${sanitiseHtml(application?.declared_by_position || '')}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #888;">Authorised at</td>
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: 'Seisly <hello@seisly.com>',
       to: email,
-      subject: `Submission authorised - ${application?.company_name || companyName}`,
+      subject: `Submission authorised - ${sanitiseHtml(application?.company_name || companyName)}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
           <div style="margin-bottom: 32px;">
@@ -109,9 +110,9 @@ export async function POST(request: NextRequest) {
             We have received your submission authorisation.
           </h1>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 16px;">
-            Thank you, ${application?.declared_by_name || name}. We will now prepare and submit your
+            Thank you, ${sanitiseHtml(application?.declared_by_name || name)}. We will now prepare and submit your
             ${(application?.scheme || scheme).toUpperCase()} advance assurance application to HMRC
-            on behalf of ${application?.company_name || companyName}.
+            on behalf of ${sanitiseHtml(application?.company_name || companyName)}.
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 32px;">
             HMRC typically responds within 4 to 8 weeks. We will track your application

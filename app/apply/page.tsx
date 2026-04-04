@@ -304,6 +304,7 @@ export default function ApplyPage() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<ApplicationData>(empty);
   const [saving, setSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showErrors, setShowErrors] = useState(false);
@@ -482,11 +483,11 @@ export default function ApplyPage() {
       if (url) {
         window.location.href = url;
       } else {
-        alert("Payment could not be started. Please try again or contact support@seisly.com");
+        setPaymentError("Payment could not be started. Please try again or contact support@seisly.com");
       }
     } catch (err) {
       console.error('Payment error:', err)
-      alert("Something went wrong. Please try again.");
+      setPaymentError("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -553,47 +554,9 @@ export default function ApplyPage() {
           <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
             <p className="text-xs text-[#8a6500]">Dev mode - test data available</p>
             <button
-              onClick={() => {
-                setData({
-                  email: "test@testcompany.com",
-                  scheme: "seis",
-                  companyName: "Test Company Ltd",
-                  companyNumber: "12345678",
-                  utr: "1234567890",
-                  incorporatedAt: "2024-01-15",
-                  isKic: false,
-                  kickReason: "",
-                  riskToCapital: "The company aims to grow its SaaS platform to 10,000 paying customers within 3 years, scaling from current revenue of £50,000 ARR. The business plan projects headcount growth from 3 to 15 employees. Investor capital is at risk as the company is pre-profitability and dependent on continued product development and sales execution. The long-term objective is to capture 1% of the UK SME market for compliance software.",
-                  qualifyingActivity: "trade",
-                  tradeStarted: true,
-                  tradeStartDate: "2024-03-01",
-                  tradeDescription: "The company provides SaaS compliance software to UK SMEs. Revenue is generated through monthly subscriptions. Customers are small businesses in regulated industries including financial services and healthcare.",
-                  previousVcs: false,
-                  previousVcsTypes: [],
-                  raisingAmount: "150000",
-                  sharePurpose: "The funds will be used to hire two additional software engineers at £45,000 each, expand sales and marketing activities with a budget of £30,000, and invest £30,000 in product development to build new compliance modules. This directly supports the growth and development of the business.",
-                  proposedInvestors: [
-                    { name: "James Thomas", address: "14 High Street, London, SW1A 1AA", amount: "75000" },
-                    { name: "Sarah Williams", address: "22 Park Lane, Manchester, M1 2AB", amount: "75000" },
-                  ],
-                  shareClass: "Ordinary shares",
-                  preferentialRights: false,
-                  preferentialRightsDetail: "",
-                  withinInitialPeriod: "yes",
-                  hasSubsidiaries: false,
-                  grossAssetsBefore: "up_to_350k",
-                  grossAssetsAfter: "",
-                  employeeCount: "3",
-                  ukIncorporated: true,
-                  registeredAddress: { line1: "1 Test Street", line2: "", city: "London", postcode: "SW1A 1AA" },
-                  ukEstablishmentAddress: { line1: "", line2: "", city: "", postcode: "" },
-                  establishmentNarrative: "",
-                  hasCommercialSale: null, firstCommercialSaleDate: "",
-                  outsidePeriodReason: "", previousInvestmentAmount: "",
-                  previousInvestmentDate: "", newMarketDetails: "",
-                  signatoryName: "John Smith",
-                  signatoryPosition: "Director",
-                });
+              onClick={async () => {
+                const { DEV_TEST_DATA } = await import('@/lib/dev-test-data');
+                setData(DEV_TEST_DATA);
                 setStep(9);
               }}
               className="text-xs bg-[#8a6500] text-white px-3 py-1.5 rounded hover:bg-[#6b5000] transition-colors"
@@ -1155,6 +1118,11 @@ export default function ApplyPage() {
                 className="w-full bg-[#0d7a5f] text-white py-4 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {saving ? "Preparing payment..." : "Confirm and pay →"}
               </button>
+              {paymentError && (
+                <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-3 mt-3">
+                  <p className="text-xs text-[#c0392b]">{paymentError}</p>
+                </div>
+              )}
               <p className="text-xs text-[#aaa] text-center mt-3">Money-back guarantee if rejected due to our error</p>
             </div>
           </div>

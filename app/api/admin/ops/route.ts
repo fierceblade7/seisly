@@ -8,7 +8,9 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   const password = request.headers.get('x-admin-password')
-  if (password !== (process.env.ADMIN_PASSWORD || 'seisly-admin-2026')) {
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (!adminPassword) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  if (password !== adminPassword) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

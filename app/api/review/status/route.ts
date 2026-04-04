@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const { data } = await supabase
     .from('applications')
-    .select('review_status, review_results, review_released, ai_review_result, review_started_at, review_completed_at, company_name, status')
+    .select('review_status, review_released, status')
     .eq('email', email)
     .eq('scheme', scheme)
     .single()

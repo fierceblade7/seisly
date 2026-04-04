@@ -61,10 +61,6 @@ function ReviewPageContent() {
         const data = await res.json()
         setStatus(data.review_status || 'pending')
         setReleased(!!data.review_released)
-        if (data.review_released && data.review_results) {
-          setReview(data.review_results)
-        }
-        if (data.company_name) setCompanyName(data.company_name)
         if (data.status === 'declared') setFlowStep('declared')
         if (data.status === 'authorised') setFlowStep('authorised')
       } catch {
@@ -368,10 +364,9 @@ function ReviewPageContent() {
                     for submitting to HMRC directly via their online service. Please note
                     the money-back guarantee does not apply to self-submitted applications.
                   </p>
-                  <button
-                    className="w-full border border-[#0d7a5f] text-[#0d7a5f] py-3 rounded-lg text-sm font-medium hover:bg-[#f0faf6] transition-colors"
-                    onClick={() => alert('Application pack download coming soon. We will email it to you shortly.')}>
-                    Download application pack and instructions
+                  <button disabled
+                    className="w-full border border-[#e8e8e4] text-[#aaa] py-3 rounded-lg text-sm font-medium cursor-not-allowed">
+                    Download application pack - coming soon
                   </button>
                 </div>
                 <div className="bg-white border border-[#0d7a5f] rounded-xl p-6">

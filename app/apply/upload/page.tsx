@@ -55,6 +55,7 @@ export default function UploadPage() {
   const [email, setEmail] = useState("");
   const [scheme, setScheme] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [emailWarning, setEmailWarning] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -66,9 +67,10 @@ export default function UploadPage() {
 
   const handleFileChange = async (docType: string, file: File) => {
     if (!email) {
-      alert("Please enter your email address first.");
+      setEmailWarning("Please enter your email address first.");
       return;
     }
+    setEmailWarning("");
 
     setUploads(prev => ({ ...prev, [docType]: { file, status: "uploading" } }));
 
@@ -206,6 +208,7 @@ export default function UploadPage() {
               onChange={e => setEmail(e.target.value)}
             />
             <p className="text-xs text-[#888] mt-1.5">So we can match your documents to your application.</p>
+            {emailWarning && <p className="text-xs text-[#c0392b] mt-1.5">{emailWarning}</p>}
           </div>
         )}
 

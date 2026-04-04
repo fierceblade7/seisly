@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     })
 
     const data = await res.json()
-    console.error('[Cron] Knowledge base update:', JSON.stringify(data))
+    console.log('[Cron] Knowledge base update:', JSON.stringify(data))
     return NextResponse.json({ success: true, ...data })
   } catch (err) {
     console.error('[Cron] Knowledge update failed:', err)

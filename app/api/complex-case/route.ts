@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { sanitiseHtml } from '@/lib/sanitise-html'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,14 +35,14 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: 'Seisly <hello@seisly.com>',
       to: 'support@seisly.com',
-      subject: `Complex case review needed - ${email}`,
+      subject: `Complex case review needed - ${sanitiseHtml(email)}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
           <h1 style="font-size: 24px; font-weight: 400; margin-bottom: 16px;">Complex case flagged</h1>
           <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888; width: 30%;">Email</td>
-              <td style="padding: 8px 0;">${email}</td>
+              <td style="padding: 8px 0;">${sanitiseHtml(email)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Scheme</td>
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #888;">Flags</td>
-              <td style="padding: 8px 0;">${(complexityFlags || []).join(', ')}</td>
+              <td style="padding: 8px 0;">${(complexityFlags || []).map((f: string) => sanitiseHtml(f)).join(', ')}</td>
             </tr>
           </table>
           <div style="margin-top: 24px; padding: 16px; background: #fff8e6; border-radius: 8px;">

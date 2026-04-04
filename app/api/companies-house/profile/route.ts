@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+const chLimiter = rateLimit({ name: 'companies-house-profile', maxRequests: 30, windowMs: 60 * 60 * 1000 });
 
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req.headers);
+  const { success } = chLimiter.check(ip);
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 });
+  }
+
   const number = req.nextUrl.searchParams.get("number");
   if (!number) {
     return NextResponse.json({ error: "Company number is required" }, { status: 400 });

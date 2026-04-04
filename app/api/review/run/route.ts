@@ -10,6 +10,7 @@ const supabase = createClient(
 )
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
+// Requires Vercel Pro plan (hobby limit is 60s)
 export const maxDuration = 120
 
 const PROMPT_VERSION = '2.0.0'
@@ -162,7 +163,8 @@ export async function POST(request: NextRequest) {
   }
 
   const internalSecret = request.headers.get('x-internal-secret')
-  const expectedSecret = process.env.INTERNAL_SECRET || 'seisly-internal'
+  const expectedSecret = process.env.INTERNAL_SECRET
+  if (!expectedSecret) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
   if (internalSecret !== expectedSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -341,7 +343,7 @@ Perform all checks A1-H7 and return the structured JSON result.`
       .eq('email', email)
       .eq('scheme', scheme)
 
-    console.error('[AI Review] Completed for', email, scheme, '- status:', overallStatus)
+    console.log('[AI Review] Completed for', email, scheme, '- status:', overallStatus)
     return NextResponse.json({ success: true, status: overallStatus })
 
   } catch (err) {
