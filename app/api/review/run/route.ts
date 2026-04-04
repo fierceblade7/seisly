@@ -1,42 +1,34 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { Resend } from 'resend'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { queryKnowledgeBase } from '@/lib/knowledge-ingest'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const resend = new Resend(process.env.RESEND_API_KEY!)
-
-import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const maxDuration = 120
 
-const PROMPT_VERSION = '1.1.0'
-
+const PROMPT_VERSION = '2.0.0'
 const reviewLimiter = rateLimit({ name: 'review-run', maxRequests: 5, windowMs: 60 * 60 * 1000 })
 
 async function downloadDocument(fileUrl: string): Promise<Buffer | null> {
   try {
     const response = await fetch(fileUrl)
     if (!response.ok) return null
-    const arrayBuffer = await response.arrayBuffer()
-    return Buffer.from(arrayBuffer)
-  } catch {
-    return null
-  }
+    return Buffer.from(await response.arrayBuffer())
+  } catch { return null }
 }
 
 async function extractTextFromDocx(buffer: Buffer): Promise<string> {
   try {
     const mammoth = await import('mammoth')
     const result = await mammoth.extractRawText({ buffer })
-    return result.value.substring(0, 6000)
-  } catch {
-    return '[Could not extract text from Word document]'
-  }
+    return result.value.substring(0, 8000)
+  } catch { return '[Could not extract text from Word document]' }
 }
 
 async function extractTextFromXlsx(buffer: Buffer): Promise<string> {
@@ -44,56 +36,131 @@ async function extractTextFromXlsx(buffer: Buffer): Promise<string> {
     const XLSX = await import('xlsx')
     const workbook = XLSX.read(buffer, { type: 'buffer' })
     let text = ''
-    const prioritySheets = ['Summary', 'P&L', 'PL', 'Forecast',
-      'Revenue', 'Headcount', 'Assumptions', 'Model', 'Financial']
-
-    // Sort sheets - priority sheets first
+    const prioritySheets = ['Summary', 'P&L', 'PL', 'Forecast', 'Revenue', 'Headcount', 'Assumptions', 'Model', 'Financial']
     const sheets = workbook.SheetNames.sort((a: string, b: string) => {
-      const aIsPriority = prioritySheets.some(p =>
-        a.toLowerCase().includes(p.toLowerCase()))
-      const bIsPriority = prioritySheets.some(p =>
-        b.toLowerCase().includes(p.toLowerCase()))
-      if (aIsPriority && !bIsPriority) return -1
-      if (!aIsPriority && bIsPriority) return 1
-      return 0
+      const aP = prioritySheets.some(p => a.toLowerCase().includes(p.toLowerCase()))
+      const bP = prioritySheets.some(p => b.toLowerCase().includes(p.toLowerCase()))
+      if (aP && !bP) return -1; if (!aP && bP) return 1; return 0
     })
-
     let totalRows = 0
     for (const sheetName of sheets) {
       if (totalRows >= 500) break
       const sheet = workbook.Sheets[sheetName]
-      const rows = XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        defval: '',
-        raw: false
-      }) as string[][]
-
-      const nonEmptyRows = rows.filter((row: string[]) =>
-        row.some((cell: string) => cell !== '' && cell !== null && cell !== undefined)
-      ).slice(0, Math.min(100, 500 - totalRows))
-
-      if (nonEmptyRows.length > 0) {
-        text += `\n[Sheet: ${sheetName}]\n`
-        text += nonEmptyRows.map((row: string[]) => row.join('\t')).join('\n')
-        totalRows += nonEmptyRows.length
-      }
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false }) as string[][]
+      const nonEmpty = rows.filter((row: string[]) => row.some((c: string) => c !== '' && c !== null && c !== undefined)).slice(0, Math.min(100, 500 - totalRows))
+      if (nonEmpty.length > 0) { text += `\n[Sheet: ${sheetName}]\n` + nonEmpty.map((r: string[]) => r.join('\t')).join('\n'); totalRows += nonEmpty.length }
     }
-    return text.substring(0, 8000) || '[Empty spreadsheet]'
-  } catch {
-    return '[Could not extract data from Excel file]'
-  }
+    return text.substring(0, 10000) || '[Empty spreadsheet]'
+  } catch { return '[Could not extract data from Excel file]' }
 }
 
+const SYSTEM_PROMPT = `You are an expert SEIS and EIS advance assurance reviewer with deep knowledge of HMRC Venture Capital Schemes rules, including VCM8130 (growth and development), VCM8100 (risk to capital), the qualifying trade requirements, share structure requirements, and all relevant legislation.
+
+You are reviewing a SEIS/EIS advance assurance application. You will receive the application form data and the content of uploaded documents.
+
+Perform every check listed below. For each check return a JSON object with:
+- id: the check ID (e.g. "A1", "B2")
+- category: the category letter and name
+- description: what the check verifies
+- status: "pass", "warn", or "fail"
+- confidence: "high", "medium", or "low"
+- notes: specific finding for THIS application (never generic)
+
+After all checks, return an overall assessment.
+
+Return ONLY valid JSON matching this exact structure (no markdown fences):
+{
+  "checks": [
+    { "id": "A1", "category": "A - Company eligibility", "description": "...", "status": "pass|warn|fail", "confidence": "high|medium|low", "notes": "..." },
+    ...
+  ],
+  "overall_status": "green|amber|red",
+  "confidence": "high|medium|low",
+  "priority": "spot check only|standard review|full review required",
+  "summary": "2-3 sentence plain English summary",
+  "issues": [
+    { "id": "...", "status": "warn|fail", "notes": "..." }
+  ]
+}
+
+CHECKS TO PERFORM:
+
+Category A - Company eligibility:
+A1: UK incorporated or has permanent establishment in UK
+A2: Unquoted - not listed on a recognised stock exchange
+A3: Gross assets do not exceed limit (SEIS: £350k before / EIS: £15m before, £16m after)
+A4: Employee count within limit (SEIS: <25 FTE / EIS: <250 FTE, <500 for KICs)
+A5: Company trading less than limit (SEIS: 3 years from first trade / EIS: 7 years, 10 for KICs)
+A6: Has not exceeded lifetime raise limit (SEIS: £250k / EIS: £5m in 12 months)
+A7: Not controlled by another company unless qualifying subsidiary
+A8: No prior EIS/VCT investment before trade commenced (SEIS only)
+
+Category B - Trade eligibility:
+B1: Trade description identifies a qualifying trade
+B2: No excluded activities (banking, insurance, legal/accounting, property development, hotels, nursing homes, farming, non-approved energy generation, leasing, receivables financing)
+B3: Trade is not a non-qualifying activity disguised as qualifying
+B4: If KIC status claimed, criteria are met
+
+Category C - Share structure:
+C1: Shares being issued are new ordinary shares
+C2: No preferential rights to assets on winding up
+C3: No pre-emption rights that would block new investors
+C4: No arrangements for shares to be redeemed or bought back
+C5: No guaranteed returns or fixed dividends
+C6: No pre-arranged exit or put options
+
+Category D - Use of funds:
+D1: Funds for growth and development of qualifying trade
+D2: Not to acquire another business or trade
+D3: Not to repay existing loans
+D4: Not to pay existing shareholders
+D5: Funds are for qualifying business activity only
+
+Category E - Risk to capital:
+E1: Statement addresses genuine risk of loss of capital
+E2: Investment is not capital-protected or guaranteed
+E3: No side arrangements that reduce investor risk
+E4: Statement is specific to company circumstances, not generic boilerplate
+
+Category F - Document adequacy:
+F1: Business plan covers background, product/service, market, team, financials, use of funds
+F2: Articles of association present
+F3: Shareholder agreement present if applicable
+F4: Latest accounts or management accounts present if trading
+F5: Companies House confirmation or incorporation certificate present
+F6: Share structure or cap table present
+
+Category G - Document consistency:
+G1: Company name matches across documents and application
+G2: Incorporation date matches
+G3: Trade description consistent between business plan and application
+G4: Use of funds consistent between business plan and application
+G5: Employee numbers consistent
+G6: Gross assets in accounts consistent with application
+G7: Share class in articles consistent - ordinary shares, no preferential rights
+G8: Articles do not contain pre-arranged exit clauses
+G9: Articles do not contain preferential rights to assets or dividends
+G10: Shareholder agreement does not contain put options or guaranteed returns
+G11: Shareholder agreement does not contain drag-along terms constituting pre-arranged exit
+
+Category H - Red flags:
+H1: Trade description is not vague or generic
+H2: Risk to capital statement is not boilerplate
+H3: Use of funds does not include debt repayment or acquisition
+H4: Gross assets not within 10% of the limit
+H5: Employee count not within 2 of the limit
+H6: Age of company not within 3 months of the limit
+H7: Previous VCS investment checked for impact on eligibility
+
+Be thorough. If you cannot verify something from the documents provided, set confidence to "low" and note what is missing. Never guess - state clearly when information is insufficient.`
+
 export async function POST(request: NextRequest) {
-  // Internal secret check
-  // Rate limit
   const ip = getClientIp(request.headers)
   const { success } = reviewLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }
 
-  // Internal secret check
   const internalSecret = request.headers.get('x-internal-secret')
   const expectedSecret = process.env.INTERNAL_SECRET || 'seisly-internal'
   if (internalSecret !== expectedSecret) {
@@ -108,7 +175,6 @@ export async function POST(request: NextRequest) {
     email = body.email
     scheme = body.scheme
 
-    // 1. Fetch application data
     const { data: application } = await supabase
       .from('applications')
       .select('*')
@@ -120,313 +186,171 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
 
-    // 2. Fetch uploaded documents
+    // Fetch uploaded documents
     const { data: documents } = await supabase
       .from('application_documents')
       .select('*')
       .eq('email', email)
       .eq('scheme', scheme)
 
-    // 3. Download and extract document content
+    // Download and extract document content
     const documentContents: Record<string, string> = {}
     const documentMessages: Anthropic.Messages.ContentBlockParam[] = []
 
     if (documents && documents.length > 0) {
       for (const doc of documents) {
         const buffer = await downloadDocument(doc.file_url)
-        if (!buffer) {
-          documentContents[doc.doc_type] = '[Document could not be downloaded]'
-          continue
-        }
-
+        if (!buffer) { documentContents[doc.doc_type] = '[Could not download]'; continue }
         const fileName = doc.file_name.toLowerCase()
-        const fileSize = buffer.length
-
-        // Check file size - skip content reading for files over 4MB
-        if (fileSize > 4 * 1024 * 1024) {
-          documentContents[doc.doc_type] =
-            `[File too large for automated analysis: ${(fileSize / 1024 / 1024).toFixed(1)}MB. ` +
-            `Document exists but content was not read. Manual review recommended.]`
-          continue
+        if (buffer.length > 4 * 1024 * 1024) {
+          documentContents[doc.doc_type] = `[File too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB]`; continue
         }
-
         if (fileName.endsWith('.pdf')) {
-          // Pass PDF natively to Claude via document message
-          const base64 = buffer.toString('base64')
           documentMessages.push({
             type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: base64,
-            },
+            source: { type: 'base64', media_type: 'application/pdf', data: buffer.toString('base64') },
             title: doc.doc_type,
-            context: `This is the ${doc.doc_type.replace(/_/g, ' ')} document uploaded for the application.`,
+            context: `${doc.doc_type.replace(/_/g, ' ')} document.`,
           } as Anthropic.Messages.ContentBlockParam)
-          documentContents[doc.doc_type] = '[PDF - see attached document]'
+          documentContents[doc.doc_type] = '[PDF attached]'
         } else if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
           documentContents[doc.doc_type] = await extractTextFromDocx(buffer)
         } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
           documentContents[doc.doc_type] = await extractTextFromXlsx(buffer)
         } else if (fileName.match(/\.(jpg|jpeg|png)$/i)) {
           const mediaType = fileName.endsWith('.png') ? 'image/png' as const : 'image/jpeg' as const
-          const base64 = buffer.toString('base64')
-          documentMessages.push({
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType,
-              data: base64,
-            },
-          })
-          documentContents[doc.doc_type] = '[Image - see attached]'
+          documentMessages.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: buffer.toString('base64') } })
+          documentContents[doc.doc_type] = '[Image attached]'
         } else {
-          documentContents[doc.doc_type] = '[File format not supported for automated reading]'
+          documentContents[doc.doc_type] = '[Unsupported format]'
         }
       }
     }
 
-    // 4. Build application summary
+    // Build application summary
     const appSummary = `
-COMPANY: ${application.company_name} (${application.company_number})
-SCHEME: ${scheme.toUpperCase()}
-INCORPORATED: ${application.incorporated_at}
-TRADE STARTED: ${application.trade_started ? 'Yes - ' + application.trade_start_date : 'No'}
-TRADE DESCRIPTION: ${application.trade_description}
-QUALIFYING ACTIVITY: ${application.qualifying_activity}
-RAISING AMOUNT: £${Number(application.raising_amount || 0).toLocaleString()}
-SHARE PURPOSE / USE OF FUNDS: ${application.share_purpose}
-RISK TO CAPITAL: ${application.risk_to_capital}
-SHARE CLASS: ${application.share_class}
-PREFERENTIAL RIGHTS: ${application.preferential_rights ? 'Yes - ' + application.preferential_rights_detail : 'No'}
-PREVIOUS VCS: ${application.previous_vcs ? 'Yes' : 'No'}
-GROSS ASSETS BEFORE: ${application.gross_assets_before}
-EMPLOYEE COUNT: ${application.employee_count}
-HAS SUBSIDIARIES: ${application.has_subsidiaries ? 'Yes' : 'No'}
-UK INCORPORATED: ${application.uk_incorporated ? 'Yes' : 'No'}
-    `.trim()
+APPLICATION DATA:
+Company: ${application.company_name} (${application.company_number})
+Scheme: ${scheme.toUpperCase()}
+Incorporated: ${application.incorporated_at}
+UK Incorporated: ${application.uk_incorporated}
+Trade Started: ${application.trade_started ? 'Yes - ' + application.trade_start_date : 'No'}
+Trade Description: ${application.trade_description}
+Qualifying Activity: ${application.qualifying_activity}
+Raising Amount: £${Number(application.raising_amount || 0).toLocaleString()}
+Share Purpose / Use of Funds: ${application.share_purpose}
+Risk to Capital: ${application.risk_to_capital}
+Share Class: ${application.share_class}
+Preferential Rights: ${application.preferential_rights ? 'Yes - ' + application.preferential_rights_detail : 'No'}
+Previous VCS: ${application.previous_vcs ? 'Yes - types: ' + (application.previous_vcs_types || []).join(', ') : 'No'}
+Gross Assets Before: ${application.gross_assets_before}
+Gross Assets After: ${application.gross_assets_after || 'N/A'}
+Employee Count: ${application.employee_count}
+Has Subsidiaries: ${application.has_subsidiaries}
+Has Commercial Sale: ${application.has_commercial_sale}
+First Commercial Sale Date: ${application.first_commercial_sale_date || 'N/A'}
+Within Initial Period: ${application.within_initial_period || 'N/A'}
+Is KIC: ${application.is_kic || false}
+Not Controlled: ${application.not_controlled !== false}
+`.trim()
 
-    // 5. Build document summary for non-PDF docs
     const docTextSummary = Object.entries(documentContents)
       .map(([type, content]) => `\n=== ${type.replace(/_/g, ' ').toUpperCase()} ===\n${content}`)
       .join('\n')
 
-    // 6. PASS 1 - Document adequacy check with actual content
-    const pass1Content: Anthropic.Messages.ContentBlockParam[] = [
+    // RAG: query knowledge base for relevant legislation and guidance
+    let ragContext = ''
+    try {
+      const ragQuery = `${scheme.toUpperCase()} advance assurance ${application.trade_description || ''} ${application.qualifying_activity || ''}`
+      const ragChunks = await queryKnowledgeBase(ragQuery, 10)
+      if (ragChunks.length > 0) {
+        ragContext = 'RELEVANT HMRC LEGISLATION AND GUIDANCE:\n' +
+          ragChunks.map(c => `[${c.source_name}${c.section_reference ? ' - ' + c.section_reference : ''}]\n${c.content}`).join('\n\n') +
+          '\n\n'
+      }
+    } catch (ragErr) {
+      console.error('[AI Review] RAG query failed, proceeding without:', ragErr)
+    }
+
+    const systemPromptWithRag = ragContext
+      ? ragContext + 'Using the above legislation and guidance, ' + SYSTEM_PROMPT.charAt(0).toLowerCase() + SYSTEM_PROMPT.slice(1)
+      : SYSTEM_PROMPT
+
+    const userContent: Anthropic.Messages.ContentBlockParam[] = [
       {
         type: 'text',
-        text: `You are an expert SEIS and EIS advance assurance specialist with over a decade of experience reviewing HMRC applications. You are reviewing a ${scheme.toUpperCase()} advance assurance application for ${application.company_name}.
+        text: `Review this ${scheme.toUpperCase()} advance assurance application for ${application.company_name}.
 
-Here is the application data:
 ${appSummary}
 
-${docTextSummary ? `Here is the extracted content from uploaded documents (Word and Excel files):\n${docTextSummary}` : ''}
+UPLOADED DOCUMENTS:
+${documents?.map(d => `- ${d.doc_type}: ${d.file_name}`).join('\n') || 'No documents uploaded'}
 
-${documentMessages.length > 0 ? 'PDF documents are attached for your review.' : 'No PDF documents were provided.'}
+DOCUMENT CONTENT (text extracted from Word/Excel files):
+${docTextSummary || 'No text content extracted'}
 
-Based on the actual document content provided, assess whether the document pack is adequate for an HMRC ${scheme.toUpperCase()} advance assurance application.
+${documentMessages.length > 0 ? 'PDF and image documents are attached for your review.' : ''}
 
-For each document type assess:
-1. Whether it has been provided and whether the content is adequate
-2. What HMRC will specifically look for in this document
-3. Whether the content is consistent with the application form answers
-4. Any specific improvements needed
-
-Also assess the application form answers:
-- Is the risk to capital narrative substantive and company-specific (minimum 150 words)?
-- Is the trade description clear and does it match the business plan?
-- Is the share purpose / use of funds adequate for the growth and development requirement (VCM8130)?
-- Are there any inconsistencies between the documents and the form answers?
-- Does the business plan contain financial forecasts showing growth?
-- Are the raising amount and use of funds consistent with the financial model?
-
-Respond ONLY with a JSON object in this exact format with no markdown fences:
-{
-  "overall": "pass" | "amber" | "fail",
-  "summary": "2-3 sentence overall assessment",
-  "documents": {
-    "business_plan": { "status": "green" | "amber" | "red", "message": "specific feedback based on actual content" },
-    "accounts": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "articles": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "shareholder_list": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "investor_documents": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "subscription_agreement": { "status": "green" | "amber" | "red", "message": "specific feedback" }
-  },
-  "form_answers": {
-    "risk_to_capital": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "trade_description": { "status": "green" | "amber" | "red", "message": "specific feedback" },
-    "share_purpose": { "status": "green" | "amber" | "red", "message": "specific feedback" }
-  },
-  "action_items": ["list of specific things to fix or improve before submission"]
-}`
+Perform all checks A1-H7 and return the structured JSON result.`
       },
       ...documentMessages
     ]
 
-    const pass1Response = await anthropic.messages.create({
+    const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: pass1Content }]
+      max_tokens: 4000,
+      system: systemPromptWithRag,
+      messages: [{ role: 'user', content: userContent }]
     })
 
-    let pass1Results: Record<string, unknown> = {}
+    let reviewResult: Record<string, unknown> = {}
     try {
-      const pass1Text = pass1Response.content[0].type === 'text'
-        ? pass1Response.content[0].text : '{}'
-      const cleanPass1 = pass1Text
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim()
-      pass1Results = JSON.parse(cleanPass1)
+      const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
+      const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim()
+      reviewResult = JSON.parse(clean)
     } catch (e) {
-      console.error('[AI Review] Pass 1 parse error:', e)
-      pass1Results = {
-        overall: 'amber',
-        summary: 'Review completed. Please check individual sections.',
-        documents: {},
-        form_answers: {},
-        action_items: []
+      console.error('[AI Review] Parse error:', e)
+      reviewResult = {
+        checks: [],
+        overall_status: 'amber',
+        confidence: 'low',
+        priority: 'full review required',
+        summary: 'AI review completed but output could not be parsed. Manual review required.',
+        issues: []
       }
     }
 
-    // 7. PASS 2 - Consistency check
-    const pass2Content: Anthropic.Messages.ContentBlockParam[] = [
-      {
-        type: 'text',
-        text: `You are an expert SEIS and EIS advance assurance specialist. You are doing a deep consistency check on a ${scheme.toUpperCase()} advance assurance application for ${application.company_name}.
-
-Here is the full application data:
-${appSummary}
-
-${docTextSummary ? `Document content:\n${docTextSummary}` : ''}
-
-${documentMessages.length > 0 ? 'PDF documents are attached.' : ''}
-
-Perform a thorough consistency check:
-1. Does the raising amount (£${Number(application.raising_amount || 0).toLocaleString()}) match what is described in the business plan and financial model?
-2. Are employee numbers consistent across all documents and the form?
-3. Does the use of funds narrative align with VCM8130 growth and development requirement?
-4. Is the risk to capital narrative specific to this company?
-5. Are the financial forecasts realistic and consistent with the stage of the business?
-6. Is the trade description consistent across the form and all documents?
-7. Are there any red flags that HMRC would query?
-${scheme === 'eis' || scheme === 'both' ? `8. EIS: Does the application clearly demonstrate growth and development per VCM8130 (updated 20 March 2026)?` : ''}
-
-Suggest specific improvements to strengthen the application.
-
-Respond ONLY with a JSON object with no markdown fences:
-{
-  "overall": "pass" | "amber" | "fail",
-  "summary": "2-3 sentence consistency assessment",
-  "consistency_checks": {
-    "raising_amount": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "employee_count": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "use_of_funds": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "risk_to_capital": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "trade_consistency": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "growth_development": { "status": "green" | "amber" | "red", "message": "feedback" },
-    "financial_forecasts": { "status": "green" | "amber" | "red", "message": "feedback" }
-  },
-  "suggested_improvements": [
-    { "field": "field name", "current": "current answer summary", "suggested": "specific improvement" }
-  ]
-}`
-      },
-      ...documentMessages
-    ]
-
-    const pass2Response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: pass2Content }]
-    })
-
-    let pass2Results: Record<string, unknown> = {}
-    try {
-      const pass2Text = pass2Response.content[0].type === 'text'
-        ? pass2Response.content[0].text : '{}'
-      const cleanPass2 = pass2Text
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim()
-      pass2Results = JSON.parse(cleanPass2)
-    } catch (e) {
-      console.error('[AI Review] Pass 2 parse error:', e)
-      pass2Results = {
-        overall: 'amber',
-        summary: 'Consistency check completed.',
-        consistency_checks: {},
-        suggested_improvements: []
-      }
-    }
-
-    // 8. Store results
-    const overallStatus =
-      pass1Results.overall === 'fail' || pass2Results.overall === 'fail'
-        ? 'needs_attention'
-        : pass1Results.overall === 'amber' || pass2Results.overall === 'amber'
-          ? 'amber'
-          : 'ready'
+    // Map overall_status to review_status column
+    const overallStatus = (reviewResult.overall_status as string) || 'amber'
+    const reviewStatus = overallStatus === 'green' ? 'ready' : overallStatus === 'red' ? 'needs_attention' : 'amber'
 
     await supabase
       .from('applications')
       .update({
-        review_status: overallStatus,
+        review_status: reviewStatus,
         review_completed_at: new Date().toISOString(),
-        review_pass1: pass1Results,
-        review_pass2: pass2Results,
-        review_results: { pass1: pass1Results, pass2: pass2Results, overall: overallStatus, prompt_version: PROMPT_VERSION, reviewed_at: new Date().toISOString() },
+        ai_review_result: {
+          ...reviewResult,
+          prompt_version: PROMPT_VERSION,
+          reviewed_at: new Date().toISOString(),
+          model: 'claude-sonnet-4-6',
+        },
+        review_results: reviewResult,
+        review_released: false,
       })
       .eq('email', email)
       .eq('scheme', scheme)
-
-    // 9. Send email
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
-    const reviewUrl = `${baseUrl}/apply/review?email=${encodeURIComponent(email)}&scheme=${scheme}`
-
-    await resend.emails.send({
-      from: 'Seisly <hello@seisly.com>',
-      to: email,
-      subject: `Your ${scheme.toUpperCase()} application review is ready - ${application.company_name}`,
-      html: `
-        <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
-          <div style="margin-bottom: 32px;">
-            <span style="font-size: 24px; font-weight: 400;">Seis<span style="color: #0d7a5f;">ly</span></span>
-          </div>
-          <h1 style="font-size: 28px; font-weight: 400; margin-bottom: 16px;">Your application review is ready.</h1>
-          <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 24px;">
-            We have reviewed your ${scheme.toUpperCase()} advance assurance application and supporting documents for <strong>${application.company_name}</strong>.
-          </p>
-          <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 32px;">
-            Overall status: <strong style="color: ${overallStatus === 'ready' ? '#0d7a5f' : overallStatus === 'amber' ? '#8a6500' : '#c0392b'}">${overallStatus === 'ready' ? 'Ready to submit' : overallStatus === 'amber' ? 'A few things to review' : 'Needs attention before submission'}</strong>
-          </p>
-          <a href="${reviewUrl}" style="display: inline-block; background: #0d7a5f; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-family: sans-serif;">
-            View your review
-          </a>
-          <p style="font-size: 13px; color: #aaa; margin-top: 32px; line-height: 1.6;">
-            If you have any questions, reply to this email or contact us at support@seisly.com.<br><br>
-            Seisly does not guarantee HMRC approval. Advance assurance is discretionary and HMRC's decision is final. Our money-back guarantee applies only where rejection is due to our error.<br><br>
-            Seisly is a product of Litigo Limited, 71-75 Shelton Street, London WC2H 9JQ.
-          </p>
-        </div>
-      `
-    })
 
     console.error('[AI Review] Completed for', email, scheme, '- status:', overallStatus)
     return NextResponse.json({ success: true, status: overallStatus })
 
   } catch (err) {
     console.error('[AI Review] Error:', err)
-
-    // Update status to failed
     try {
       if (email) {
         await supabase.from('applications').update({ review_status: 'failed' }).eq('email', email).eq('scheme', scheme)
       }
     } catch {}
-
     return NextResponse.json({ error: 'Review failed' }, { status: 500 })
   }
 }

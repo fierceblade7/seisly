@@ -40,6 +40,7 @@ function ReviewPageContent() {
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('loading')
   const [companyName, setCompanyName] = useState('')
+  const [released, setReleased] = useState(false)
 
   // Declaration/authorisation flow
   const [flowStep, setFlowStep] = useState<'review' | 'declare' | 'declared' | 'authorised'>('review')
@@ -59,7 +60,8 @@ function ReviewPageContent() {
         const res = await fetch(`/api/review/status?email=${encodeURIComponent(email)}&scheme=${scheme}`)
         const data = await res.json()
         setStatus(data.review_status || 'pending')
-        if (data.review_results) {
+        setReleased(!!data.review_released)
+        if (data.review_released && data.review_results) {
           setReview(data.review_results)
         }
         if (data.company_name) setCompanyName(data.company_name)
@@ -114,16 +116,15 @@ function ReviewPageContent() {
         <h1 className="font-serif text-3xl tracking-tight mb-2">Your application review</h1>
         <p className="text-sm text-[#888] mb-8">{email} · {scheme.toUpperCase()}</p>
 
-        {(status === 'pending' || status === 'in_progress') && (
+        {/* Holding page — shown when review not yet released to founder */}
+        {!released && (status === 'pending' || status === 'in_progress' || status === 'ready' || status === 'amber' || status === 'needs_attention') && (
           <div className="bg-white border border-[#e8e8e4] rounded-xl p-8 text-center">
-            <div className="w-12 h-12 rounded-full bg-[#f0faf6] border border-[#c0e8db] flex items-center justify-center mx-auto mb-4">
-              <div className="w-4 h-4 rounded-full bg-[#0d7a5f] animate-pulse"></div>
-            </div>
-            <h2 className="font-serif text-xl mb-2">Review in progress</h2>
+            <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-6">&#10003;</div>
+            <h2 className="font-serif text-2xl mb-3">Thank you - your application is with us</h2>
             <p className="text-sm text-[#666] leading-relaxed mb-4">
-              We are reviewing your documents and application answers. This usually takes 5 to 10 minutes.
+              We are reviewing your application and documents. This usually takes up to 24 hours. We will email you when your review is ready.
             </p>
-            <p className="text-xs text-[#aaa]">You will receive an email when your review is ready. You can close this page.</p>
+            <p className="text-xs text-[#aaa]">You can close this page. We will email you at <strong>{email}</strong> when there is an update.</p>
           </div>
         )}
 
@@ -133,7 +134,7 @@ function ReviewPageContent() {
           </div>
         )}
 
-        {review && (status === 'ready' || status === 'amber' || status === 'needs_attention') && (
+        {released && review && (status === 'ready' || status === 'amber' || status === 'needs_attention') && (
           <div className="space-y-6">
 
             <div className={`border rounded-xl p-5 ${status === 'ready' ? 'bg-[#f0faf6] border-[#c0e8db]' : status === 'amber' ? 'bg-[#fff8e6] border-[#f5d88a]' : 'bg-[#fef2f2] border-[#fecaca]'}`}>

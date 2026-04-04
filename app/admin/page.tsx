@@ -38,6 +38,8 @@ interface Application {
   authority_letter_url: string;
   admin_notes: string;
   review_overrides: Record<string, unknown>;
+  ai_review_result: Record<string, unknown>;
+  review_released: boolean;
   // All other fields from the application
   [key: string]: unknown;
 }
@@ -50,6 +52,7 @@ interface OpsData {
   last30Days: number;
   recentActivity: Application[];
   systemStatus: Record<string, string>;
+  kbStats: { totalChunks: number; lastUpdated: string | null; sourceCount: number };
 }
 
 // ── Shared components ──────────────────────────────────────
@@ -73,9 +76,63 @@ const CHECKLIST = [
 ];
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: "Draft", paid: "Paid", documents_uploaded: "Docs uploaded",
+  draft: "Draft", paid: "Paid", documents_uploaded: "Documents uploaded",
+  docs_uploaded: "Documents uploaded", review_complete: "Review complete",
   declared: "Declared", authorised: "Authorised", submitted: "Submitted",
   amber: "Amber", needs_attention: "Needs attention", ready: "Ready",
+  pending: "Pending", in_progress: "In progress", failed: "Failed",
+  pass: "Pass", fail: "Fail",
+};
+
+const VALUE_LABELS: Record<string, Record<string, string>> = {
+  gross_assets_before: {
+    up_to_350k: "Up to £350,000",
+    "350k_to_1m": "£350,001 to £1,000,000",
+    up_to_1m: "Up to £1,000,000",
+    "1m_to_5m": "£1,000,001 to £5,000,000",
+    "5m_to_10m": "£5,000,001 to £10,000,000",
+    "10m_to_15m": "£10,000,001 to £15,000,000",
+    over_10m: "More than £10,000,000",
+    over_15m: "More than £15,000,000",
+  },
+  gross_assets_after: {
+    up_to_16m: "Up to £16,000,000",
+    over_16m: "More than £16,000,000",
+  },
+  scheme: {
+    seis: "SEIS",
+    eis: "EIS",
+    both: "SEIS and EIS",
+  },
+  status: STATUS_LABELS,
+  qualifying_activity: {
+    trade: "Trade",
+    rd: "Research and development",
+  },
+  within_initial_period: {
+    yes: "Yes",
+    no: "No",
+    not_sure: "Not sure",
+  },
+  outside_period_reason: {
+    follow_on: "Follow-on funding",
+    new_market: "New product/geographic market",
+  },
+  review_status: {
+    pending: "Pending", in_progress: "In progress", ready: "Ready",
+    amber: "Amber", needs_attention: "Needs attention", failed: "Failed",
+    pass: "Pass", fail: "Fail",
+  },
+};
+
+const formatValue = (field: string, value: unknown): string => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "object") return JSON.stringify(value);
+  const str = String(value);
+  const fieldMap = VALUE_LABELS[field];
+  if (fieldMap && fieldMap[str]) return fieldMap[str];
+  return str;
 };
 
 const RagBadge = ({ status }: { status: string | undefined }) => {
@@ -97,9 +154,17 @@ const StatusBadge = ({ status }: { status: string }) => {
     draft: "bg-[#f5f5f2] text-[#888] border-[#e8e8e4]",
     paid: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
     documents_uploaded: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    docs_uploaded: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    review_complete: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
     declared: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
     authorised: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
     submitted: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    pending: "bg-[#f5f5f2] text-[#888] border-[#e8e8e4]",
+    in_progress: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    amber: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    needs_attention: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+    failed: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+    ready: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
   };
   return (
     <span className={`text-[10px] px-1.5 py-0.5 rounded border ${colors[status] || colors.draft}`}>
@@ -128,6 +193,8 @@ export default function AdminPage() {
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savingNotes, setSavingNotes] = useState<string | null>(null);
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  const [runningReview, setRunningReview] = useState<string | null>(null);
+  const [releasingReview, setReleasingReview] = useState<string | null>(null);
 
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
@@ -244,6 +311,35 @@ export default function AdminPage() {
       fetchAllApps();
     } catch {}
     finally { setSavingNotes(null); }
+  };
+
+  const runReview = async (app: Application) => {
+    const key = appKey(app);
+    setRunningReview(key);
+    try {
+      await fetch("/api/admin/run-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ email: app.email, scheme: app.scheme }),
+      });
+      setTimeout(() => fetchAllApps(), 2000);
+    } catch {}
+    finally { setRunningReview(null); }
+  };
+
+  const releaseReview = async (app: Application) => {
+    const key = appKey(app);
+    if (!confirm(`Release review to ${app.email}? This will email the founder.`)) return;
+    setReleasingReview(key);
+    try {
+      await fetch("/api/admin/release-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ email: app.email, scheme: app.scheme }),
+      });
+      fetchAllApps();
+    } catch {}
+    finally { setReleasingReview(null); }
   };
 
   const updateStatus = async (app: Application, newStatus: string) => {
@@ -429,11 +525,10 @@ export default function AdminPage() {
                   const app = allApps.find(a => appKey(a) === expandedApp);
                   if (!app) return null;
                   const key = appKey(app);
-                  const pass1 = (app.review_pass1 || {}) as Record<string, unknown>;
-                  const pass2 = (app.review_pass2 || {}) as Record<string, unknown>;
-                  const docs = (pass1.documents || {}) as Record<string, { status: string; message: string }>;
-                  const formAnswers = (pass1.form_answers || {}) as Record<string, { status: string; message: string }>;
-                  const consistencyChecks = (pass2.consistency_checks || {}) as Record<string, { status: string; message: string }>;
+                  const aiReview = (app.ai_review_result || {}) as Record<string, unknown>;
+                  const checks = (aiReview.checks || []) as Array<{ id: string; category: string; description: string; status: string; confidence: string; notes: string }>;
+                  const issues = (aiReview.issues || []) as Array<{ id: string; status: string; notes: string }>;
+                  const categories = ['A - Company eligibility', 'B - Trade eligibility', 'C - Share structure', 'D - Use of funds', 'E - Risk to capital', 'F - Document adequacy', 'G - Document consistency', 'H - Red flags'];
 
                   return (
                     <div className="border-t border-[#e8e8e4] bg-[#fafaf8] px-6 py-6">
@@ -449,15 +544,30 @@ export default function AdminPage() {
                           ["UTR", app.utr],
                           ["Incorporated", app.incorporated_at],
                           ["Email", app.email],
+                          ["Scheme", formatValue("scheme", app.scheme)],
+                          ["Status", formatValue("status", app.status)],
                           ["Raising", app.raising_amount ? `£${Number(app.raising_amount).toLocaleString()}` : "-"],
                           ["Employees", app.employee_count],
-                          ["Gross assets before", app.gross_assets_before],
-                          ["Trade started", app.trade_started === true ? "Yes" : app.trade_started === false ? "No" : "-"],
+                          ["Gross assets before", formatValue("gross_assets_before", app.gross_assets_before)],
+                          ["Gross assets after", formatValue("gross_assets_after", app.gross_assets_after)],
+                          ["Qualifying activity", formatValue("qualifying_activity", app.qualifying_activity)],
+                          ["Trade started", formatValue("trade_started", app.trade_started)],
+                          ["Share class", app.share_class],
+                          ["Preferential rights", formatValue("preferential_rights", app.preferential_rights)],
+                          ["Previous VCS", formatValue("previous_vcs", app.previous_vcs)],
+                          ["Has subsidiaries", formatValue("has_subsidiaries", app.has_subsidiaries)],
+                          ["UK incorporated", formatValue("uk_incorporated", app.uk_incorporated)],
+                          ["Within initial period", formatValue("within_initial_period", app.within_initial_period)],
+                          ["Outside period reason", formatValue("outside_period_reason", app.outside_period_reason)],
+                          ["Has commercial sale", formatValue("has_commercial_sale", app.has_commercial_sale)],
                           ["Signatory", app.declared_by_name ? `${app.declared_by_name}, ${app.declared_by_position}` : "-"],
                           ["Declared", app.declared_at ? new Date(app.declared_at).toLocaleString('en-GB') : "-"],
                           ["Authorised", app.authorised_at ? new Date(app.authorised_at).toLocaleString('en-GB') : "-"],
                           ["Authority letter", app.authority_letter_url ? "Generated" : "-"],
-                        ].map(([label, value]) => (
+                          ["Paid", formatValue("paid", app.paid)],
+                          ["Paid at", app.paid_at ? new Date(app.paid_at).toLocaleString('en-GB') : "-"],
+                          ["Review released", formatValue("review_released", app.review_released)],
+                        ].filter(([, v]) => v && v !== "-").map(([label, value]) => (
                           <div key={label as string} className="flex justify-between text-xs py-1 border-b border-[#f0f0ec]">
                             <span className="text-[#888]">{label as string}</span>
                             <span className="text-[#1a1a18] text-right max-w-[60%] truncate">{(value as string) || "-"}</span>
@@ -466,70 +576,90 @@ export default function AdminPage() {
                       </div>
 
                       {/* Longer text fields */}
-                      {[
+                      {([
                         ["Trade description", app.trade_description],
                         ["Risk to capital", app.risk_to_capital],
                         ["Share purpose", app.share_purpose],
-                      ].filter(([, v]) => v).map(([label, value]) => (
-                        <div key={label as string} className="mb-4">
-                          <p className="text-xs font-medium text-[#888] mb-1">{label as string}</p>
-                          <p className="text-xs text-[#444] leading-relaxed bg-white rounded-lg border border-[#e8e8e4] p-3">{value as string}</p>
+                      ] as [string, unknown][]).filter(([, v]) => v).map(([label, value]) => (
+                        <div key={label} className="mb-4">
+                          <p className="text-xs font-medium text-[#888] mb-1">{label}</p>
+                          <p className="text-xs text-[#444] leading-relaxed bg-white rounded-lg border border-[#e8e8e4] p-3">{String(value)}</p>
                         </div>
                       ))}
 
-                      {/* AI Review - Pass 1 documents */}
-                      {Object.keys(docs).length > 0 && (
+                      {/* AI Review - Overall assessment */}
+                      {(aiReview.overall_status as string | undefined) && (
+                        <div className={`rounded-xl p-4 mb-4 border ${aiReview.overall_status === 'green' ? 'bg-[#f0faf6] border-[#c0e8db]' : aiReview.overall_status === 'red' ? 'bg-[#fef2f2] border-[#fecaca]' : 'bg-[#fff8e6] border-[#f5d88a]'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <RagBadge status={String(aiReview.overall_status)} />
+                              <span className="text-xs font-medium text-[#888]">
+                                {String(aiReview.priority || '')} · Confidence: {String(aiReview.confidence || 'unknown')}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-[#aaa]">v{String(aiReview.prompt_version || '?')}</span>
+                          </div>
+                          <p className="text-xs text-[#444] leading-relaxed">{String(aiReview.summary || '')}</p>
+                        </div>
+                      )}
+
+                      {/* Issues (warns and fails) */}
+                      {issues.length > 0 && (
                         <div className="mb-4">
-                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Documents</p>
+                          <p className="text-xs font-medium text-[#888] mb-2">Issues ({issues.length})</p>
                           <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
-                            {Object.entries(docs).map(([docKey, val]) => (
-                              <div key={docKey} className="px-3 py-2 flex items-start justify-between gap-3">
+                            {issues.map((issue, i) => (
+                              <div key={i} className="px-3 py-2 flex items-start justify-between gap-3">
                                 <div className="flex-1">
-                                  <p className="text-xs font-medium">{docKey.replace(/_/g, ' ')}</p>
-                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
+                                  <p className="text-xs font-medium">{issue.id}</p>
+                                  <p className="text-[10px] text-[#666] mt-0.5">{issue.notes}</p>
                                 </div>
-                                <RagBadge status={val.status} />
+                                <RagBadge status={issue.status} />
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      {/* AI Review - Form answers */}
-                      {Object.keys(formAnswers).length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Form Answers</p>
-                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
-                            {Object.entries(formAnswers).map(([faKey, val]) => (
-                              <div key={faKey} className="px-3 py-2 flex items-start justify-between gap-3">
-                                <div className="flex-1">
-                                  <p className="text-xs font-medium">{faKey.replace(/_/g, ' ')}</p>
-                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
+                      {/* Full checklist by category */}
+                      {checks.length > 0 && categories.map(cat => {
+                        const catChecks = checks.filter(c => c.category === cat);
+                        if (catChecks.length === 0) return null;
+                        return (
+                          <div key={cat} className="mb-4">
+                            <p className="text-xs font-medium text-[#888] mb-2">{cat}</p>
+                            <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
+                              {catChecks.map(check => (
+                                <div key={check.id} className="px-3 py-2 flex items-start justify-between gap-3">
+                                  <div className="flex-1">
+                                    <p className="text-xs font-medium">{check.id}: {check.description}</p>
+                                    <p className="text-[10px] text-[#666] mt-0.5">{check.notes}</p>
+                                    <p className="text-[10px] text-[#aaa] mt-0.5">Confidence: {check.confidence}</p>
+                                  </div>
+                                  <RagBadge status={check.status} />
                                 </div>
-                                <RagBadge status={val.status} />
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })}
 
-                      {/* AI Review - Consistency checks */}
-                      {Object.keys(consistencyChecks).length > 0 && (
-                        <div className="mb-4">
-                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Consistency</p>
-                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
-                            {Object.entries(consistencyChecks).map(([ccKey, val]) => (
-                              <div key={ccKey} className="px-3 py-2 flex items-start justify-between gap-3">
-                                <div className="flex-1">
-                                  <p className="text-xs font-medium">{ccKey.replace(/_/g, ' ')}</p>
-                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
-                                </div>
-                                <RagBadge status={val.status} />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Admin action buttons */}
+                      <div className="flex gap-3 mb-4">
+                        <button onClick={() => runReview(app)} disabled={runningReview === key}
+                          className="text-xs border border-[#e8e8e4] text-[#888] px-4 py-2 rounded-lg hover:border-[#0d7a5f] hover:text-[#0d7a5f] transition-colors disabled:opacity-50">
+                          {runningReview === key ? "Running..." : app.review_status === 'in_progress' ? "Review in progress..." : "Run AI review"}
+                        </button>
+                        {(aiReview.overall_status as string) && !app.review_released && (
+                          <button onClick={() => releaseReview(app)} disabled={releasingReview === key}
+                            className="text-xs bg-[#0d7a5f] text-white px-4 py-2 rounded-lg hover:bg-[#0a5c47] transition-colors disabled:opacity-50">
+                            {releasingReview === key ? "Releasing..." : "Approve and release to founder"}
+                          </button>
+                        )}
+                        {app.review_released && (
+                          <span className="text-xs text-[#0d7a5f] px-4 py-2">Released to founder</span>
+                        )}
+                      </div>
 
                       {/* Admin notes */}
                       <div className="mb-4">
@@ -564,7 +694,7 @@ export default function AdminPage() {
                       {/* Links */}
                       <div className="flex gap-4">
                         <Link href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
-                          target="_blank" className="text-xs text-[#0d7a5f] hover:underline">View review</Link>
+                          target="_blank" className="text-xs text-[#0d7a5f] hover:underline">View founder review</Link>
                         {app.authority_letter_url && (
                           <a href={app.authority_letter_url as string} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-[#0d7a5f] hover:underline">Authority letter</a>
@@ -594,12 +724,13 @@ export default function AdminPage() {
             ) : (
               <>
                 {/* System status */}
-                <div className="grid grid-cols-4 gap-3 mb-8">
+                <div className="grid grid-cols-5 gap-3 mb-8">
                   {[
                     { label: "Supabase", status: opsData.systemStatus.supabase },
                     { label: "Anthropic", status: opsData.systemStatus.anthropic },
                     { label: "Stripe", status: opsData.systemStatus.stripe },
                     { label: "Resend", status: opsData.systemStatus.resend },
+                    { label: "Voyage AI", status: opsData.systemStatus.voyage },
                   ].map(s => (
                     <div key={s.label} className={`rounded-xl p-4 border ${s.status === "green" ? "bg-[#f0faf6] border-[#c0e8db]" : s.status === "amber" ? "bg-[#fff8e6] border-[#f5d88a]" : "bg-[#fef2f2] border-[#fecaca]"}`}>
                       <p className="text-xs text-[#888] mb-1">{s.label}</p>
@@ -608,6 +739,41 @@ export default function AdminPage() {
                       </p>
                     </div>
                   ))}
+                </div>
+
+                {/* Knowledge base */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-4 mb-8">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Knowledge base</p>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Update knowledge base? This fetches all HMRC sources and may take several minutes.')) return;
+                        try {
+                          const res = await fetch('/api/admin/ingest-knowledge', { method: 'POST', headers: authHeaders() });
+                          const data = await res.json();
+                          alert(`Done. Added: ${data.totalAdded}, Updated: ${data.totalUpdated}, Skipped: ${data.totalSkipped}, Errors: ${data.totalErrors}`);
+                          fetchOps();
+                        } catch { alert('Knowledge base update failed'); }
+                      }}
+                      className="text-xs border border-[#e8e8e4] text-[#888] px-3 py-1.5 rounded hover:border-[#0d7a5f] hover:text-[#0d7a5f] transition-colors"
+                    >
+                      Update knowledge base
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs text-[#888]">Total chunks</p>
+                      <p className="text-sm font-medium">{opsData.kbStats?.totalChunks || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#888]">Sources</p>
+                      <p className="text-sm font-medium">{opsData.kbStats?.sourceCount || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#888]">Last updated</p>
+                      <p className="text-sm font-medium">{opsData.kbStats?.lastUpdated ? new Date(opsData.kbStats.lastUpdated).toLocaleDateString('en-GB') : 'Never'}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Metrics */}

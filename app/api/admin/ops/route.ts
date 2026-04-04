@@ -61,6 +61,32 @@ export async function GET(request: NextRequest) {
       anthropic: process.env.ANTHROPIC_API_KEY ? 'green' : 'red',
       stripe: process.env.STRIPE_SECRET_KEY ? 'green' : 'red',
       resend: process.env.RESEND_API_KEY ? 'green' : 'red',
+      voyage: process.env.VOYAGE_API_KEY ? 'green' : 'red',
+    }
+
+    // Knowledge base stats
+    let kbStats = { totalChunks: 0, lastUpdated: null as string | null, sourceCount: 0 }
+    try {
+      const { count } = await supabase
+        .from('knowledge_base')
+        .select('*', { count: 'exact', head: true })
+      kbStats.totalChunks = count || 0
+
+      const { data: latestChunk } = await supabase
+        .from('knowledge_base')
+        .select('last_fetched_at')
+        .order('last_fetched_at', { ascending: false })
+        .limit(1)
+        .single()
+      kbStats.lastUpdated = latestChunk?.last_fetched_at || null
+
+      const { data: sources } = await supabase
+        .from('knowledge_base')
+        .select('source_url')
+      const uniqueSources = new Set(sources?.map(s => s.source_url))
+      kbStats.sourceCount = uniqueSources.size
+    } catch {
+      // knowledge_base table may not exist yet
     }
 
     return NextResponse.json({
@@ -71,6 +97,7 @@ export async function GET(request: NextRequest) {
       last30Days: last30Days || 0,
       recentActivity: recentActivity || [],
       systemStatus,
+      kbStats,
     })
   } catch (err) {
     console.error('Ops error:', err)
