@@ -198,7 +198,22 @@ export default function EligibilityPage() {
     let qs: Question[];
     if (scheme === "seis") qs = [...seisQuestions];
     else if (scheme === "eis") qs = [...seisQuestions.slice(0, 4), ...eisOnlyQuestions, seisQuestions[seisQuestions.length - 1]];
-    else qs = [...seisQuestions, ...eisOnlyQuestions];
+    else {
+      // Combined track: include EIS questions but skip any whose SEIS equivalent
+      // was already answered "yes" (lower threshold automatically satisfies higher)
+      const eisToSeisMap: Record<string, string> = {
+        eis_age: "seis_age",
+        eis_employees: "seis_employees",
+        eis_assets: "seis_assets",
+        eis_amount: "seis_amount",
+      };
+      const filteredEis = eisOnlyQuestions.filter(q => {
+        const seisEquiv = eisToSeisMap[q.id];
+        if (seisEquiv && answers[seisEquiv] === "yes") return false;
+        return true;
+      });
+      qs = [...seisQuestions, ...filteredEis];
+    }
 
     // Insert uk_establishment follow-up after uk_incorporated if answered "no"
     if (answers.uk_incorporated === "no") {
