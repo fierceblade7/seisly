@@ -199,6 +199,22 @@ export default function AdminPage() {
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
 
+  // Modal state
+  const [modal, setModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showConfirm = (title: string, message: string): Promise<boolean> => {
+    return new Promise(resolve => {
+      setModal({ title, message, onConfirm: () => { setModal(null); resolve(true); } });
+      // If they close/cancel, resolve false — handled by the cancel button
+    });
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const appKey = (app: Application) => `${app.email}__${app.scheme}`;
 
   const authHeaders = useCallback(() => ({ "x-admin-password": password }), [password]);
@@ -239,11 +255,11 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/applications", { headers: { "x-admin-password": password } });
-      if (res.status === 401) { alert("Invalid password"); return; }
+      if (res.status === 401) { showToast("Invalid password", "error"); return; }
       const data = await res.json();
       setSubmissions(data.applications || []);
       setAuthenticated(true);
-    } catch { alert("Failed to connect"); }
+    } catch { showToast("Failed to connect", "error"); }
     finally { setLoading(false); }
   };
 
@@ -282,7 +298,8 @@ export default function AdminPage() {
   const handleSubmit = async (app: Application) => {
     const key = appKey(app);
     if (!allChecked(key)) return;
-    if (!confirm(`Submit ${app.company_name} (${app.scheme.toUpperCase()}) to HMRC?`)) return;
+    const confirmed = await showConfirm("Submit to HMRC", `Submit ${app.company_name} (${app.scheme.toUpperCase()}) to HMRC? This will email the founder.`);
+    if (!confirmed) return;
     setSubmitting(key);
     try {
       const res = await fetch("/api/admin/submit", {
@@ -291,9 +308,9 @@ export default function AdminPage() {
         body: JSON.stringify({ email: app.email, scheme: app.scheme }),
       });
       const data = await res.json();
-      if (data.success) setSubmitted(prev => [...prev, key]);
-      else alert("Failed: " + (data.error || "Unknown error"));
-    } catch { alert("Submission failed"); }
+      if (data.success) { setSubmitted(prev => [...prev, key]); showToast("Submitted and founder notified"); }
+      else showToast("Failed: " + (data.error || "Unknown error"), "error");
+    } catch { showToast("Submission failed", "error"); }
     finally { setSubmitting(null); }
   };
 
@@ -329,7 +346,8 @@ export default function AdminPage() {
 
   const releaseReview = async (app: Application) => {
     const key = appKey(app);
-    if (!confirm(`Release review to ${app.email}? This will email the founder.`)) return;
+    const confirmed = await showConfirm("Release review", `Release review to ${app.email}? This will email the founder.`);
+    if (!confirmed) return;
     setReleasingReview(key);
     try {
       await fetch("/api/admin/release-review", {
@@ -379,6 +397,33 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
+      {/* Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-xl border border-[#e8e8e4] p-6 w-full max-w-sm mx-4 shadow-lg">
+            <h3 className="font-medium text-sm mb-2">{modal.title}</h3>
+            <p className="text-xs text-[#666] leading-relaxed mb-5">{modal.message}</p>
+            <div className="flex gap-3">
+              <button onClick={() => setModal(null)}
+                className="flex-1 border border-[#e8e8e4] text-[#888] py-2.5 rounded-lg text-xs font-medium hover:border-[#ccc] transition-colors">
+                Cancel
+              </button>
+              <button onClick={modal.onConfirm}
+                className="flex-1 bg-[#0d7a5f] text-white py-2.5 rounded-lg text-xs font-medium hover:bg-[#0a5c47] transition-colors">
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg border text-xs font-medium shadow-lg transition-all ${toast.type === 'error' ? 'bg-[#fef2f2] border-[#fecaca] text-[#c0392b]' : 'bg-[#f0faf6] border-[#c0e8db] text-[#0d7a5f]'}`}>
+          {toast.message}
+        </div>
+      )}
+
       <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
         <div className="flex items-center gap-6">
           <Link href="/" className="font-serif text-xl">Seis<span className="text-[#0d7a5f]">ly</span> <span className="text-xs text-[#aaa] font-sans ml-1">Admin</span></Link>
@@ -747,13 +792,14 @@ export default function AdminPage() {
                     <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Knowledge base</p>
                     <button
                       onClick={async () => {
-                        if (!confirm('Update knowledge base? This fetches all HMRC sources and may take several minutes.')) return;
+                        const confirmed = await showConfirm("Update knowledge base", "This fetches all HMRC sources and may take several minutes. Continue?");
+                        if (!confirmed) return;
                         try {
                           const res = await fetch('/api/admin/ingest-knowledge', { method: 'POST', headers: authHeaders() });
                           const data = await res.json();
-                          alert(`Done. Added: ${data.totalAdded}, Updated: ${data.totalUpdated}, Skipped: ${data.totalSkipped}, Errors: ${data.totalErrors}`);
+                          showToast(`Done. Added: ${data.totalAdded}, Updated: ${data.totalUpdated}, Skipped: ${data.totalSkipped}, Errors: ${data.totalErrors}`);
                           fetchOps();
-                        } catch { alert('Knowledge base update failed'); }
+                        } catch { showToast('Knowledge base update failed', 'error'); }
                       }}
                       className="text-xs border border-[#e8e8e4] text-[#888] px-3 py-1.5 rounded hover:border-[#0d7a5f] hover:text-[#0d7a5f] transition-colors"
                     >
