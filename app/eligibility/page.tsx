@@ -81,7 +81,7 @@ const seisQuestions: Question[] = [
   },
   {
     id: "seis_no_prior",
-    question: "Have you previously raised investment under EIS or a VCT before carrying on any trade?",
+    question: "Has the company previously raised investment under EIS or a VCT before carrying on any trade?",
     hint: "If you raised EIS or VCT funding before your company started trading, you cannot then use SEIS.",
     disqualifies: "seis",
     disqualifyOn: "yes",
