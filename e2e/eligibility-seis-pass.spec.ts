@@ -52,6 +52,6 @@ test.describe('Eligibility checker - SEIS pass', () => {
 
     // Verify the success screen
     await expect(page.getByText('You look eligible')).toBeVisible()
-    await expect(page.getByText('SEIS')).toBeVisible()
+    await expect(page.getByText('for SEIS.')).toBeVisible()
   })
 })

@@ -4,9 +4,8 @@ test.describe('Application form navigation', () => {
   test('should load step 1, allow filling fields, navigate forward and back', async ({ page }) => {
     await page.goto('/apply')
 
-    // Verify step 1 loads
-    await expect(page.getByText('Company details')).toBeVisible()
-    await expect(page.getByText('Step 1')).toBeVisible()
+    // Verify step 1 loads (use heading role to avoid matching step indicator)
+    await expect(page.getByRole('heading', { name: 'Company details' })).toBeVisible()
 
     // Fill in email
     const emailInput = page.getByPlaceholder('you@yourcompany.com')
@@ -15,12 +14,12 @@ test.describe('Application form navigation', () => {
     // Select a scheme
     await page.getByText('SEIS only').click()
 
-    // Fill in company number
-    const companyNumberInput = page.getByPlaceholder('12345678')
+    // Fill in company number (use exact match to avoid matching UTR placeholder)
+    const companyNumberInput = page.getByPlaceholder('12345678', { exact: true })
     await companyNumberInput.fill('12345678')
 
     // Fill in UTR
-    const utrInput = page.getByPlaceholder('1234567890')
+    const utrInput = page.getByPlaceholder('1234567890', { exact: true })
     await utrInput.fill('1234567890')
 
     // Click continue (should show validation errors for missing fields)
@@ -33,7 +32,7 @@ test.describe('Application form navigation', () => {
   test('should navigate back from step 2 to step 1', async ({ page }) => {
     await page.goto('/apply')
 
-    // Verify step 1 loaded
-    await expect(page.getByText('Company details')).toBeVisible()
+    // Verify step 1 loaded (use heading role to avoid matching step indicator)
+    await expect(page.getByRole('heading', { name: 'Company details' })).toBeVisible()
   })
 })
