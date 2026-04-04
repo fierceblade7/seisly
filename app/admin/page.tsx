@@ -9,8 +9,50 @@
 // Last reviewed: April 2026
 
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+
+// ── Types ──────────────────────────────────────────────────
+
+interface Application {
+  id: string;
+  email: string;
+  scheme: string;
+  company_name: string;
+  company_number: string;
+  utr: string;
+  incorporated_at: string;
+  status: string;
+  paid: boolean;
+  paid_at: string;
+  review_status: string;
+  review_results: Record<string, unknown>;
+  review_pass1: Record<string, unknown>;
+  review_pass2: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+  authorised_at: string;
+  declared_by_name: string;
+  declared_by_position: string;
+  declared_at: string;
+  authority_letter_url: string;
+  admin_notes: string;
+  review_overrides: Record<string, unknown>;
+  // All other fields from the application
+  [key: string]: unknown;
+}
+
+interface OpsData {
+  totalApps: number;
+  statusCounts: Record<string, number>;
+  waitlistCount: number;
+  last7Days: number;
+  last30Days: number;
+  recentActivity: Application[];
+  systemStatus: Record<string, string>;
+}
+
+// ── Shared components ──────────────────────────────────────
 
 const CHECKLIST = [
   "AI review completed with no unresolved red flags",
@@ -30,60 +72,131 @@ const CHECKLIST = [
   "Employee count within qualifying limits",
 ];
 
-interface Application {
-  email: string;
-  scheme: string;
-  company_name: string;
-  company_number: string;
-  authorised_at: string;
-  declared_by_name: string;
-  declared_by_position: string;
-  review_status: string;
-}
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft", paid: "Paid", documents_uploaded: "Docs uploaded",
+  declared: "Declared", authorised: "Authorised", submitted: "Submitted",
+  amber: "Amber", needs_attention: "Needs attention", ready: "Ready",
+};
+
+const RagBadge = ({ status }: { status: string | undefined }) => {
+  if (!status) return <span className="text-xs text-[#ccc]">-</span>;
+  const cfg = {
+    green: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    ready: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    amber: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    red: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+    needs_attention: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+    pass: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    fail: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+  }[status] || "bg-[#f5f5f2] text-[#888] border-[#e8e8e4]";
+  return <span className={`text-[10px] px-1.5 py-0.5 rounded border ${cfg}`}>{status}</span>;
+};
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const colors: Record<string, string> = {
+    draft: "bg-[#f5f5f2] text-[#888] border-[#e8e8e4]",
+    paid: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    documents_uploaded: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
+    declared: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    authorised: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+    submitted: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
+  };
+  return (
+    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${colors[status] || colors.draft}`}>
+      {STATUS_LABELS[status] || status}
+    </span>
+  );
+};
+
+// ── Main page ──────────────────────────────────────────────
 
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [activeTab, setActiveTab] = useState<"submissions" | "applications" | "ops">("submissions");
   const [loading, setLoading] = useState(false);
+
+  // Submissions tab state
+  const [submissions, setSubmissions] = useState<Application[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean[]>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<string[]>([]);
 
+  // Applications tab state
+  const [allApps, setAllApps] = useState<Application[]>([]);
+  const [expandedApp, setExpandedApp] = useState<string | null>(null);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const [savingNotes, setSavingNotes] = useState<string | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+
+  // Ops tab state
+  const [opsData, setOpsData] = useState<OpsData | null>(null);
+
   const appKey = (app: Application) => `${app.email}__${app.scheme}`;
 
-  const fetchApplications = async (pw: string) => {
+  const authHeaders = useCallback(() => ({ "x-admin-password": password }), [password]);
+
+  // ── Fetch functions ──────────────────────────────────────
+
+  const fetchSubmissions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/applications", { headers: authHeaders() });
+      if (res.status === 401) { setAuthenticated(false); return; }
+      const data = await res.json();
+      setSubmissions(data.applications || []);
+    } catch {}
+  }, [authHeaders]);
+
+  const fetchAllApps = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/all-applications", { headers: authHeaders() });
+      if (res.status === 401) { setAuthenticated(false); return; }
+      const data = await res.json();
+      setAllApps(data.applications || []);
+    } catch {}
+  }, [authHeaders]);
+
+  const fetchOps = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/ops", { headers: authHeaders() });
+      if (res.status === 401) { setAuthenticated(false); return; }
+      const data = await res.json();
+      setOpsData(data);
+    } catch {}
+  }, [authHeaders]);
+
+  // ── Login ────────────────────────────────────────────────
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/applications", {
-        headers: { "x-admin-password": pw },
-      });
-      if (res.status === 401) {
-        setAuthenticated(false);
-        alert("Invalid password");
-        return;
-      }
+      const res = await fetch("/api/admin/applications", { headers: { "x-admin-password": password } });
+      if (res.status === 401) { alert("Invalid password"); return; }
       const data = await res.json();
-      setApplications(data.applications || []);
+      setSubmissions(data.applications || []);
       setAuthenticated(true);
-    } catch {
-      alert("Failed to load applications");
-    } finally {
-      setLoading(false);
-    }
+    } catch { alert("Failed to connect"); }
+    finally { setLoading(false); }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchApplications(password);
-  };
+  // ── Tab-specific data loading ────────────────────────────
 
   useEffect(() => {
-    if (authenticated) {
-      const interval = setInterval(() => fetchApplications(password), 30000);
-      return () => clearInterval(interval);
-    }
-  }, [authenticated, password]);
+    if (!authenticated) return;
+    if (activeTab === "submissions") fetchSubmissions();
+    if (activeTab === "applications") fetchAllApps();
+    if (activeTab === "ops") fetchOps();
+  }, [authenticated, activeTab, fetchSubmissions, fetchAllApps, fetchOps]);
+
+  // Auto-refresh ops tab
+  useEffect(() => {
+    if (!authenticated || activeTab !== "ops") return;
+    const interval = setInterval(fetchOps, 60000);
+    return () => clearInterval(interval);
+  }, [authenticated, activeTab, fetchOps]);
+
+  // ── Submissions tab handlers ─────────────────────────────
 
   const toggleCheck = (key: string, index: number) => {
     setCheckedItems(prev => {
@@ -102,49 +215,63 @@ export default function AdminPage() {
   const handleSubmit = async (app: Application) => {
     const key = appKey(app);
     if (!allChecked(key)) return;
-    if (!confirm(`Submit ${app.company_name} (${app.scheme.toUpperCase()}) to HMRC? This will email the founder.`)) return;
-
+    if (!confirm(`Submit ${app.company_name} (${app.scheme.toUpperCase()}) to HMRC?`)) return;
     setSubmitting(key);
     try {
       const res = await fetch("/api/admin/submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ email: app.email, scheme: app.scheme }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSubmitted(prev => [...prev, key]);
-      } else {
-        alert("Submission failed: " + (data.error || "Unknown error"));
-      }
-    } catch {
-      alert("Submission failed. Check the console.");
-    } finally {
-      setSubmitting(null);
-    }
+      if (data.success) setSubmitted(prev => [...prev, key]);
+      else alert("Failed: " + (data.error || "Unknown error"));
+    } catch { alert("Submission failed"); }
+    finally { setSubmitting(null); }
   };
+
+  // ── Applications tab handlers ────────────────────────────
+
+  const saveNotes = async (app: Application) => {
+    const key = appKey(app);
+    setSavingNotes(key);
+    try {
+      await fetch("/api/admin/update-application", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ email: app.email, scheme: app.scheme, updates: { admin_notes: editingNotes[key] || "" } }),
+      });
+      fetchAllApps();
+    } catch {}
+    finally { setSavingNotes(null); }
+  };
+
+  const updateStatus = async (app: Application, newStatus: string) => {
+    const key = appKey(app);
+    setStatusUpdating(key);
+    try {
+      await fetch("/api/admin/update-application", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ email: app.email, scheme: app.scheme, updates: { status: newStatus } }),
+      });
+      fetchAllApps();
+    } catch {}
+    finally { setStatusUpdating(null); }
+  };
+
+  // ── Login screen ─────────────────────────────────────────
 
   if (!authenticated) {
     return (
       <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
         <form onSubmit={handleLogin} className="bg-white border border-[#e8e8e4] rounded-xl p-8 w-full max-w-sm">
           <h1 className="font-serif text-2xl mb-6">Seisly Admin</h1>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Admin password"
-            className="w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-[#0d7a5f]"
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50"
-          >
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Admin password" autoFocus
+            className="w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-[#0d7a5f]" />
+          <button type="submit" disabled={loading}
+            className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50">
             {loading ? "Checking..." : "Log in"}
           </button>
         </form>
@@ -152,112 +279,406 @@ export default function AdminPage() {
     );
   }
 
+  // ── Authenticated layout ─────────────────────────────────
+
   return (
     <div className="min-h-screen bg-[#fafaf8]">
       <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
-        <Link href="/" className="font-serif text-xl">Seis<span className="text-[#0d7a5f]">ly</span> <span className="text-xs text-[#aaa] font-sans ml-2">Admin</span></Link>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="font-serif text-xl">Seis<span className="text-[#0d7a5f]">ly</span> <span className="text-xs text-[#aaa] font-sans ml-1">Admin</span></Link>
+          <div className="flex gap-1">
+            {(["submissions", "applications", "ops"] as const).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeTab === tab ? "bg-[#e8f5f1] text-[#0d7a5f]" : "text-[#888] hover:text-[#1a1a18]"}`}>
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
         <button onClick={() => { setAuthenticated(false); setPassword(""); }} className="text-xs text-[#aaa] hover:text-[#1a1a18]">Log out</button>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-serif text-2xl">Applications ready for submission</h1>
-            <p className="text-sm text-[#888] mt-1">{applications.length} application{applications.length !== 1 ? "s" : ""} awaiting HMRC submission</p>
-          </div>
-          <button onClick={() => fetchApplications(password)} className="text-xs text-[#0d7a5f] hover:underline">
-            Refresh
-          </button>
-        </div>
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
-        {applications.length === 0 && (
-          <div className="bg-white border border-[#e8e8e4] rounded-xl p-8 text-center">
-            <p className="text-sm text-[#888]">No applications awaiting submission.</p>
+        {/* ══════ TAB 1: SUBMISSIONS ══════ */}
+        {activeTab === "submissions" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="font-serif text-2xl">Submissions</h1>
+                <p className="text-sm text-[#888] mt-1">{submissions.length} awaiting HMRC submission</p>
+              </div>
+              <button onClick={fetchSubmissions} className="text-xs text-[#0d7a5f] hover:underline">Refresh</button>
+            </div>
+            {submissions.length === 0 && (
+              <div className="bg-white border border-[#e8e8e4] rounded-xl p-8 text-center">
+                <p className="text-sm text-[#888]">No applications awaiting submission.</p>
+              </div>
+            )}
+            <div className="space-y-6">
+              {submissions.map(app => {
+                const key = appKey(app);
+                const checks = checkedItems[key] || new Array(CHECKLIST.length).fill(false);
+                const checkedCount = checks.filter(Boolean).length;
+                if (submitted.includes(key)) {
+                  return (
+                    <div key={key} className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6">
+                      <p className="text-sm font-medium text-[#0a5c47]">{app.company_name} ({app.scheme.toUpperCase()}) - Submitted</p>
+                      <p className="text-xs text-[#666] mt-1">Confirmation sent to {app.email}</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={key} className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-[#f0f0ec] flex items-start justify-between">
+                      <div>
+                        <h2 className="text-sm font-medium">{app.company_name}</h2>
+                        <p className="text-xs text-[#888] mt-0.5">{app.company_number} · {app.scheme.toUpperCase()} · {app.email}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-[#888]">Authorised {app.authorised_at ? new Date(app.authorised_at).toLocaleDateString('en-GB') : 'N/A'}</p>
+                        <p className="text-xs text-[#666] mt-0.5">{app.declared_by_name}, {app.declared_by_position}</p>
+                      </div>
+                    </div>
+                    <div className="px-6 py-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Pre-submission checklist</p>
+                        <p className="text-xs text-[#888]">{checkedCount}/{CHECKLIST.length}</p>
+                      </div>
+                      <div className="space-y-2">
+                        {CHECKLIST.map((item, i) => (
+                          <label key={i} className="flex items-start gap-3 cursor-pointer group">
+                            <input type="checkbox" checked={checks[i] || false} onChange={() => toggleCheck(key, i)}
+                              className="mt-0.5 w-4 h-4 rounded border-[#e8e8e4] text-[#0d7a5f] focus:ring-[#0d7a5f] cursor-pointer" />
+                            <span className={`text-sm leading-snug ${checks[i] ? 'text-[#0d7a5f]' : 'text-[#555] group-hover:text-[#1a1a18]'}`}>{item}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="px-6 py-4 border-t border-[#f0f0ec] flex items-center justify-between gap-3">
+                      <Link href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`} className="text-xs text-[#0d7a5f] hover:underline" target="_blank">View review</Link>
+                      <button onClick={() => handleSubmit(app)} disabled={!allChecked(key) || submitting === key}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-colors ${allChecked(key) ? 'bg-[#0d7a5f] text-white hover:bg-[#0a5c47]' : 'bg-[#e8e8e4] text-[#aaa] cursor-not-allowed'}`}>
+                        {submitting === key ? 'Submitting...' : `Mark as submitted (${checkedCount}/${CHECKLIST.length})`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        <div className="space-y-6">
-          {applications.map(app => {
-            const key = appKey(app);
-            const checks = checkedItems[key] || new Array(CHECKLIST.length).fill(false);
-            const checkedCount = checks.filter(Boolean).length;
-            const isSubmitted = submitted.includes(key);
+        {/* ══════ TAB 2: APPLICATIONS ══════ */}
+        {activeTab === "applications" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="font-serif text-2xl">All Applications</h1>
+                <p className="text-sm text-[#888] mt-1">{allApps.length} total</p>
+              </div>
+              <button onClick={fetchAllApps} className="text-xs text-[#0d7a5f] hover:underline">Refresh</button>
+            </div>
 
-            if (isSubmitted) {
-              return (
-                <div key={key} className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6">
-                  <p className="text-sm font-medium text-[#0a5c47]">
-                    {app.company_name} ({app.scheme.toUpperCase()}) - Submitted to HMRC
-                  </p>
-                  <p className="text-xs text-[#666] mt-1">Confirmation email sent to {app.email}</p>
+            {allApps.length === 0 ? (
+              <div className="bg-white border border-[#e8e8e4] rounded-xl p-8 text-center">
+                <p className="text-sm text-[#888]">No applications yet.</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-[#e8e8e4] bg-[#f5f5f2]">
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Company</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Email</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Scheme</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Status</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Paid</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Review</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Created</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f0f0ec]">
+                      {allApps.map(app => {
+                        const key = appKey(app);
+                        const isExpanded = expandedApp === key;
+                        return (
+                          <tr key={key} className="cursor-pointer hover:bg-[#fafaf8] transition-colors" onClick={() => {
+                            setExpandedApp(isExpanded ? null : key);
+                            if (!isExpanded && !editingNotes[key]) setEditingNotes(prev => ({ ...prev, [key]: app.admin_notes || "" }));
+                          }}>
+                            <td className="px-4 py-3 font-medium text-[#1a1a18]">{app.company_name || "-"}</td>
+                            <td className="px-4 py-3 text-[#666]">{app.email}</td>
+                            <td className="px-4 py-3">{app.scheme?.toUpperCase()}</td>
+                            <td className="px-4 py-3"><StatusBadge status={app.status || "draft"} /></td>
+                            <td className="px-4 py-3">{app.paid ? <span className="text-[#0d7a5f]">Yes</span> : <span className="text-[#ccc]">No</span>}</td>
+                            <td className="px-4 py-3"><RagBadge status={app.review_status} /></td>
+                            <td className="px-4 py-3 text-[#888]">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB') : "-"}</td>
+                            <td className="px-4 py-3 text-[#888]">{app.updated_at ? new Date(app.updated_at).toLocaleDateString('en-GB') : "-"}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            }
 
-            return (
-              <div key={key} className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden">
-                {/* Header */}
-                <div className="px-6 py-4 border-b border-[#f0f0ec]">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-sm font-medium text-[#1a1a18]">{app.company_name}</h2>
-                      <p className="text-xs text-[#888] mt-0.5">{app.company_number} · {app.scheme.toUpperCase()} · {app.email}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-[#888]">Authorised {app.authorised_at ? new Date(app.authorised_at).toLocaleDateString('en-GB') : 'N/A'}</p>
-                      <p className="text-xs text-[#666] mt-0.5">Signatory: {app.declared_by_name}, {app.declared_by_position}</p>
-                    </div>
-                  </div>
-                </div>
+                {/* Expanded detail panel */}
+                {expandedApp && (() => {
+                  const app = allApps.find(a => appKey(a) === expandedApp);
+                  if (!app) return null;
+                  const key = appKey(app);
+                  const pass1 = (app.review_pass1 || {}) as Record<string, unknown>;
+                  const pass2 = (app.review_pass2 || {}) as Record<string, unknown>;
+                  const docs = (pass1.documents || {}) as Record<string, { status: string; message: string }>;
+                  const formAnswers = (pass1.form_answers || {}) as Record<string, { status: string; message: string }>;
+                  const consistencyChecks = (pass2.consistency_checks || {}) as Record<string, { status: string; message: string }>;
 
-                {/* Checklist */}
-                <div className="px-6 py-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Pre-submission checklist</p>
-                    <p className="text-xs text-[#888]">{checkedCount}/{CHECKLIST.length}</p>
-                  </div>
-                  <div className="space-y-2">
-                    {CHECKLIST.map((item, i) => (
-                      <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={checks[i] || false}
-                          onChange={() => toggleCheck(key, i)}
-                          className="mt-0.5 w-4 h-4 rounded border-[#e8e8e4] text-[#0d7a5f] focus:ring-[#0d7a5f] cursor-pointer"
+                  return (
+                    <div className="border-t border-[#e8e8e4] bg-[#fafaf8] px-6 py-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-medium text-sm">{app.company_name} - {app.scheme?.toUpperCase()}</h3>
+                        <button onClick={() => setExpandedApp(null)} className="text-xs text-[#aaa] hover:text-[#1a1a18]">Close</button>
+                      </div>
+
+                      {/* Application fields */}
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-6">
+                        {[
+                          ["Company number", app.company_number],
+                          ["UTR", app.utr],
+                          ["Incorporated", app.incorporated_at],
+                          ["Email", app.email],
+                          ["Raising", app.raising_amount ? `£${Number(app.raising_amount).toLocaleString()}` : "-"],
+                          ["Employees", app.employee_count],
+                          ["Gross assets before", app.gross_assets_before],
+                          ["Trade started", app.trade_started === true ? "Yes" : app.trade_started === false ? "No" : "-"],
+                          ["Signatory", app.declared_by_name ? `${app.declared_by_name}, ${app.declared_by_position}` : "-"],
+                          ["Declared", app.declared_at ? new Date(app.declared_at).toLocaleString('en-GB') : "-"],
+                          ["Authorised", app.authorised_at ? new Date(app.authorised_at).toLocaleString('en-GB') : "-"],
+                          ["Authority letter", app.authority_letter_url ? "Generated" : "-"],
+                        ].map(([label, value]) => (
+                          <div key={label as string} className="flex justify-between text-xs py-1 border-b border-[#f0f0ec]">
+                            <span className="text-[#888]">{label as string}</span>
+                            <span className="text-[#1a1a18] text-right max-w-[60%] truncate">{(value as string) || "-"}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Longer text fields */}
+                      {[
+                        ["Trade description", app.trade_description],
+                        ["Risk to capital", app.risk_to_capital],
+                        ["Share purpose", app.share_purpose],
+                      ].filter(([, v]) => v).map(([label, value]) => (
+                        <div key={label as string} className="mb-4">
+                          <p className="text-xs font-medium text-[#888] mb-1">{label as string}</p>
+                          <p className="text-xs text-[#444] leading-relaxed bg-white rounded-lg border border-[#e8e8e4] p-3">{value as string}</p>
+                        </div>
+                      ))}
+
+                      {/* AI Review - Pass 1 documents */}
+                      {Object.keys(docs).length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Documents</p>
+                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
+                            {Object.entries(docs).map(([docKey, val]) => (
+                              <div key={docKey} className="px-3 py-2 flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <p className="text-xs font-medium">{docKey.replace(/_/g, ' ')}</p>
+                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
+                                </div>
+                                <RagBadge status={val.status} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Review - Form answers */}
+                      {Object.keys(formAnswers).length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Form Answers</p>
+                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
+                            {Object.entries(formAnswers).map(([faKey, val]) => (
+                              <div key={faKey} className="px-3 py-2 flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <p className="text-xs font-medium">{faKey.replace(/_/g, ' ')}</p>
+                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
+                                </div>
+                                <RagBadge status={val.status} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Review - Consistency checks */}
+                      {Object.keys(consistencyChecks).length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-xs font-medium text-[#888] mb-2">AI Review - Consistency</p>
+                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
+                            {Object.entries(consistencyChecks).map(([ccKey, val]) => (
+                              <div key={ccKey} className="px-3 py-2 flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <p className="text-xs font-medium">{ccKey.replace(/_/g, ' ')}</p>
+                                  <p className="text-[10px] text-[#666] mt-0.5">{val.message}</p>
+                                </div>
+                                <RagBadge status={val.status} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Admin notes */}
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-[#888] mb-2">Admin notes</p>
+                        <textarea
+                          value={editingNotes[key] ?? app.admin_notes ?? ""}
+                          onChange={e => setEditingNotes(prev => ({ ...prev, [key]: e.target.value }))}
+                          rows={3}
+                          className="w-full border border-[#e8e8e4] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0d7a5f] bg-white resize-none"
+                          placeholder="Internal notes about this application..."
                         />
-                        <span className={`text-sm leading-snug ${checks[i] ? 'text-[#0d7a5f]' : 'text-[#555] group-hover:text-[#1a1a18]'}`}>
-                          {item}
-                        </span>
-                      </label>
+                        <button onClick={() => saveNotes(app)} disabled={savingNotes === key}
+                          className="mt-2 text-xs bg-[#0d7a5f] text-white px-4 py-1.5 rounded hover:bg-[#0a5c47] transition-colors disabled:opacity-50">
+                          {savingNotes === key ? "Saving..." : "Save notes"}
+                        </button>
+                      </div>
+
+                      {/* Status update */}
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-[#888] mb-2">Update status</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {["draft", "paid", "documents_uploaded", "declared", "authorised", "submitted"].map(s => (
+                            <button key={s} onClick={() => updateStatus(app, s)}
+                              disabled={statusUpdating === key || app.status === s}
+                              className={`text-[10px] px-3 py-1.5 rounded border transition-colors ${app.status === s ? "bg-[#0d7a5f] text-white border-[#0d7a5f]" : "border-[#e8e8e4] text-[#888] hover:border-[#0d7a5f] hover:text-[#0d7a5f]"}`}>
+                              {STATUS_LABELS[s] || s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Links */}
+                      <div className="flex gap-4">
+                        <Link href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
+                          target="_blank" className="text-xs text-[#0d7a5f] hover:underline">View review</Link>
+                        {app.authority_letter_url && (
+                          <a href={app.authority_letter_url as string} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-[#0d7a5f] hover:underline">Authority letter</a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════ TAB 3: OPS ══════ */}
+        {activeTab === "ops" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="font-serif text-2xl">Ops</h1>
+                <p className="text-sm text-[#888] mt-1">Auto-refreshes every 60 seconds</p>
+              </div>
+              <button onClick={fetchOps} className="text-xs text-[#0d7a5f] hover:underline">Refresh now</button>
+            </div>
+
+            {!opsData ? (
+              <p className="text-sm text-[#888]">Loading...</p>
+            ) : (
+              <>
+                {/* System status */}
+                <div className="grid grid-cols-4 gap-3 mb-8">
+                  {[
+                    { label: "Supabase", status: opsData.systemStatus.supabase },
+                    { label: "Anthropic", status: opsData.systemStatus.anthropic },
+                    { label: "Stripe", status: opsData.systemStatus.stripe },
+                    { label: "Resend", status: opsData.systemStatus.resend },
+                  ].map(s => (
+                    <div key={s.label} className={`rounded-xl p-4 border ${s.status === "green" ? "bg-[#f0faf6] border-[#c0e8db]" : s.status === "amber" ? "bg-[#fff8e6] border-[#f5d88a]" : "bg-[#fef2f2] border-[#fecaca]"}`}>
+                      <p className="text-xs text-[#888] mb-1">{s.label}</p>
+                      <p className={`text-sm font-medium ${s.status === "green" ? "text-[#0d7a5f]" : s.status === "amber" ? "text-[#8a6500]" : "text-[#c0392b]"}`}>
+                        {s.status === "green" ? "Connected" : s.status === "amber" ? "Warning" : "Not configured"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-5 gap-3 mb-8">
+                  {[
+                    { label: "Total applications", value: opsData.totalApps },
+                    { label: "Last 7 days", value: opsData.last7Days },
+                    { label: "Last 30 days", value: opsData.last30Days },
+                    { label: "Waitlist signups", value: opsData.waitlistCount },
+                    { label: "Authorised", value: opsData.statusCounts.authorised || 0 },
+                  ].map(m => (
+                    <div key={m.label} className="bg-white border border-[#e8e8e4] rounded-xl p-4">
+                      <p className="text-xs text-[#888] mb-1">{m.label}</p>
+                      <p className="font-serif text-2xl text-[#1a1a18]">{m.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Status breakdown */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-4 mb-8">
+                  <p className="text-xs font-medium text-[#888] uppercase tracking-wide mb-3">Applications by status</p>
+                  <div className="flex gap-4 flex-wrap">
+                    {Object.entries(opsData.statusCounts).sort(([, a], [, b]) => b - a).map(([status, count]) => (
+                      <div key={status} className="flex items-center gap-2">
+                        <StatusBadge status={status} />
+                        <span className="text-xs font-medium text-[#1a1a18]">{count}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="px-6 py-4 border-t border-[#f0f0ec] flex items-center justify-between gap-3">
-                  <Link
-                    href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
-                    className="text-xs text-[#0d7a5f] hover:underline"
-                    target="_blank"
-                  >
-                    View review
-                  </Link>
-                  <button
-                    onClick={() => handleSubmit(app)}
-                    disabled={!allChecked(key) || submitting === key}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      allChecked(key)
-                        ? 'bg-[#0d7a5f] text-white hover:bg-[#0a5c47]'
-                        : 'bg-[#e8e8e4] text-[#aaa] cursor-not-allowed'
-                    }`}
-                  >
-                    {submitting === key ? 'Submitting...' : `Mark as submitted to HMRC (${checkedCount}/${CHECKLIST.length})`}
-                  </button>
+                {/* Recent activity */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-[#e8e8e4] bg-[#f5f5f2]">
+                    <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Recent activity (last 20)</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-[#f0f0ec]">
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Company</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Email</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Scheme</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Status</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Paid</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Review</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Created</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Updated</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#f0f0ec]">
+                        {opsData.recentActivity.map((app, i) => (
+                          <tr key={i} className="hover:bg-[#fafaf8]">
+                            <td className="px-4 py-2 text-[#1a1a18]">{app.company_name || "-"}</td>
+                            <td className="px-4 py-2 text-[#666]">{app.email}</td>
+                            <td className="px-4 py-2">{app.scheme?.toUpperCase()}</td>
+                            <td className="px-4 py-2"><StatusBadge status={app.status || "draft"} /></td>
+                            <td className="px-4 py-2">{app.paid ? <span className="text-[#0d7a5f]">Yes</span> : <span className="text-[#ccc]">No</span>}</td>
+                            <td className="px-4 py-2"><RagBadge status={app.review_status} /></td>
+                            <td className="px-4 py-2 text-[#888]">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB') : "-"}</td>
+                            <td className="px-4 py-2 text-[#888]">{app.updated_at ? new Date(app.updated_at).toLocaleDateString('en-GB') : "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
