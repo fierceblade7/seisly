@@ -51,8 +51,8 @@ const seisQuestions: Question[] = [
   },
   {
     id: "seis_age",
-    question: "Was your company's first day of trading less than 2 years ago?",
-    hint: "The date of your first SEIS investment must be within 2 years of the date the company started to trade, not the date of incorporation.",
+    question: "Was your company's first day of trading less than 3 years ago?",
+    hint: "Trading starts when you first make your goods or services genuinely available for sale, even if no one buys on that day. This date is on or before your first invoice or revenue, never after. It is not the same as your date of incorporation.",
     disqualifies: "seis",
     disqualifyOn: "no",
     disqualifyMessage: "SEIS requires your company to have been trading for less than 3 years at the time of the first investment.",
@@ -166,6 +166,7 @@ export default function EligibilityPage() {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const [disqualified, setDisqualified] = useState<{ message: string; scheme: string } | null>(null);
+  const [softDisqualified, setSoftDisqualified] = useState<{ message: string } | null>(null);
   const [email, setEmail] = useState("");
   const [emailSubmitting, setEmailSubmitting] = useState(false);
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -213,11 +214,21 @@ export default function EligibilityPage() {
   const questions = getQuestions();
   const progress = step === "scheme" ? 0 : step === "result" ? 100 : Math.round((currentQ / questions.length) * 100);
 
+  // Questions that trigger soft SEIS disqualification (continue to EIS) when on "both" track
+  const softSeisDisqualifiers = ["seis_age", "seis_amount"];
+
   const handleAnswer = (answer: Answer) => {
     const q = questions[currentQ];
     setAnswers({ ...answers, [q.id]: answer });
 
     if (answer === q.disqualifyOn && q.disqualifies) {
+      // If on "both" track and this only disqualifies SEIS, show soft screen
+      if (scheme === "both" && q.disqualifies === "seis" && softSeisDisqualifiers.includes(q.id)) {
+        setSoftDisqualified({ message: q.disqualifyMessage || "" });
+        setStep("result");
+        return;
+      }
+
       const schemeName =
         q.disqualifies === "both"
           ? scheme === "seis" ? "SEIS" : scheme === "eis" ? "EIS" : "SEIS and EIS"
@@ -232,6 +243,13 @@ export default function EligibilityPage() {
     } else {
       setStep("result");
     }
+  };
+
+  const continueAsEisOnly = () => {
+    setScheme("eis");
+    setSoftDisqualified(null);
+    setCurrentQ(0);
+    setStep("questions");
   };
 
   const handleEmailSubmit = async (source: string) => {
@@ -266,6 +284,7 @@ export default function EligibilityPage() {
     setCurrentQ(0);
     setAnswers({});
     setDisqualified(null);
+    setSoftDisqualified(null);
     setEmail("");
     setEmailSubmitted(false);
     setEmailError("");
@@ -439,7 +458,40 @@ export default function EligibilityPage() {
         {/* STEP 3: RESULT */}
         {step === "result" && (
           <div>
-            {qualified && isComplex ? (
+            {softDisqualified ? (
+              /* SOFT SEIS DISQUALIFICATION — can continue as EIS */
+              <div>
+                <div className="w-12 h-12 rounded-full bg-[#fff8e6] border border-[#f5d88a] flex items-center justify-center text-xl mb-6">!</div>
+                <p className="text-[11px] text-[#8a6500] uppercase tracking-widest font-medium mb-3">Partial result</p>
+                <h2 className="font-serif text-4xl tracking-tight mb-4">
+                  You may not qualify for SEIS<br />
+                  <em className="text-[#0d7a5f]">but you may still qualify for EIS.</em>
+                </h2>
+
+                <div className="bg-[#fff8e6] border border-[#f5d88a] rounded-xl p-5 mb-6">
+                  <p className="text-sm text-[#8a6500] leading-relaxed">{softDisqualified.message}</p>
+                </div>
+
+                <p className="text-sm text-[#666] leading-relaxed mb-8">
+                  This condition only applies to SEIS. Your company may still qualify for EIS advance assurance. You can continue the eligibility check for EIS only.
+                </p>
+
+                <div className="space-y-3">
+                  <button
+                    onClick={continueAsEisOnly}
+                    className="w-full bg-[#0d7a5f] text-white py-4 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors"
+                  >
+                    Continue for EIS only
+                  </button>
+                  <button
+                    onClick={restart}
+                    className="w-full text-center text-sm text-[#aaa] hover:text-[#1a1a18] transition-colors py-2"
+                  >
+                    Start again
+                  </button>
+                </div>
+              </div>
+            ) : qualified && isComplex ? (
               /* COMPLEX CASE — qualified but flagged */
               <div>
                 <div className="w-12 h-12 rounded-full bg-[#fff8e6] border border-[#f5d88a] flex items-center justify-center text-xl mb-6">!</div>
