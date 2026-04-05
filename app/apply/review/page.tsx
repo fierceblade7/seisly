@@ -63,6 +63,22 @@ function ReviewPageContent() {
         setReleased(!!data.review_released)
         if (data.status === 'declared') setFlowStep('declared')
         if (data.status === 'authorised') setFlowStep('authorised')
+
+        // Fetch full results when released and not yet loaded
+        if (data.review_released && !review) {
+          try {
+            const resultsRes = await fetch(`/api/review/results?email=${encodeURIComponent(email)}&scheme=${scheme}`)
+            if (resultsRes.ok) {
+              const resultsData = await resultsRes.json()
+              if (resultsData.ai_review_result) {
+                setReview(resultsData.ai_review_result)
+              } else if (resultsData.review_results) {
+                setReview(resultsData.review_results)
+              }
+              if (resultsData.company_name) setCompanyName(resultsData.company_name)
+            }
+          } catch {}
+        }
       } catch {
         setStatus('error')
       } finally {
@@ -72,7 +88,7 @@ function ReviewPageContent() {
     fetchReview()
     const interval = setInterval(fetchReview, 5000)
     return () => clearInterval(interval)
-  }, [email, scheme])
+  }, [email, scheme, review])
 
   const generateLetter = async () => {
     setLetterLoading(true)
