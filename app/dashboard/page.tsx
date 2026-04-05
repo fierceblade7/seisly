@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [referral, setReferral] = useState<{ code: string | null; totalUses: number; totalCreditsEarned: number; currentBalance: number; recentUses: Array<{ email: string; date: string; credited: boolean }> } | null>(null);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,6 +55,16 @@ export default function DashboardPage() {
       const res = await fetch(`/api/dashboard/applications?email=${encodeURIComponent(authUser.email!)}`);
       const data = await res.json();
       setApplications(data.applications || []);
+
+      // Fetch referral stats
+      try {
+        const refRes = await fetch(`/api/referral?email=${encodeURIComponent(authUser.email!)}`);
+        if (refRes.ok) {
+          const refData = await refRes.json();
+          setReferral(refData);
+        }
+      } catch {}
+
       setLoading(false);
     };
     getUser();
@@ -151,6 +163,57 @@ export default function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Referral section */}
+        {referral?.code && (
+          <div className="mt-10">
+            <h2 className="font-serif text-2xl tracking-tight mb-4">Refer a founder</h2>
+            <div className="bg-white border border-[#e8e8e4] rounded-xl p-6 mb-4">
+              <p className="text-sm text-[#666] mb-4">Share your referral link with other founders. They get £10 off, you earn £10 credit.</p>
+              <div className="bg-[#f5f5f2] rounded-lg p-4 mb-4">
+                <p className="text-xs text-[#888] mb-1">Your referral code</p>
+                <div className="flex items-center justify-between">
+                  <p className="font-mono text-lg text-[#1a1a18] tracking-wide">{referral.code}</p>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(`https://seisly.com/r/${referral.code}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                    className="text-xs border border-[#0d7a5f] text-[#0d7a5f] px-3 py-1.5 rounded hover:bg-[#f0faf6] transition-colors">
+                    {copied ? "Copied!" : "Copy link"}
+                  </button>
+                </div>
+                <p className="text-xs text-[#aaa] mt-2">seisly.com/r/{referral.code}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-[#888]">Total referrals</p>
+                  <p className="font-serif text-xl">{referral.totalUses}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#888]">Credits earned</p>
+                  <p className="font-serif text-xl">£{referral.totalCreditsEarned}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#888]">Current balance</p>
+                  <p className="font-serif text-xl text-[#0d7a5f]">£{referral.currentBalance}</p>
+                </div>
+              </div>
+              {referral.recentUses.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-[#888] uppercase tracking-wide mb-2">Recent referrals</p>
+                  <div className="space-y-2">
+                    {referral.recentUses.map((use, i) => (
+                      <div key={i} className="flex justify-between text-xs py-1 border-b border-[#f0f0ec]">
+                        <span className="text-[#666]">{use.email}</span>
+                        <span className="text-[#888]">{new Date(use.date).toLocaleDateString('en-GB')}</span>
+                        <span className={use.credited ? "text-[#0d7a5f]" : "text-[#aaa]"}>{use.credited ? "£10 credited" : "Pending"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-xs text-[#aaa] mt-4">Credits can be applied to resubmission (£50) or compliance statements (£399).</p>
+            </div>
           </div>
         )}
       </div>

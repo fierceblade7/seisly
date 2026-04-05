@@ -1,8 +1,11 @@
 import Stripe from 'stripe'
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { createClient } from '@supabase/supabase-js'
+import { lookupReferralCode, recordReferralUse } from '@/lib/referral'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const checkoutLimiter = rateLimit({ name: 'stripe-checkout', maxRequests: 10, windowMs: 60 * 60 * 1000 })
 
 const PRICE_IDS: Record<string, string | undefined> = {
@@ -29,10 +32,31 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
 
+    // Check for referral code in cookie
+    const referralCookie = request.cookies.get('seisly_referral')?.value
+    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined
+    let referralCodeUsed: string | undefined
+
+    if (referralCookie && process.env.STRIPE_REFERRAL_COUPON_ID) {
+      const referral = await lookupReferralCode(referralCookie)
+      if (referral.valid && referral.referrerEmail !== email) {
+        discounts = [{ coupon: process.env.STRIPE_REFERRAL_COUPON_ID }]
+        referralCodeUsed = referralCookie.toUpperCase()
+        await recordReferralUse(referralCodeUsed, email)
+        // Store referral code on the application
+        await supabase
+          .from('applications')
+          .update({ referral_code_used: referralCodeUsed })
+          .eq('email', email)
+          .eq('scheme', scheme)
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
       customer_email: email || undefined,
+      ...(discounts ? { discounts } : {}),
       line_items: [
         {
           price: priceId,
@@ -43,6 +67,7 @@ export async function POST(request: NextRequest) {
         applicationId: applicationId || '',
         scheme,
         email: email || '',
+        ...(referralCodeUsed ? { referral_code: referralCodeUsed } : {}),
       },
       success_url: `${baseUrl}/apply/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/apply?payment=cancelled`,

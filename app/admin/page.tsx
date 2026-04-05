@@ -178,7 +178,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<"submissions" | "applications" | "ops">("submissions");
+  const [activeTab, setActiveTab] = useState<"submissions" | "applications" | "ops" | "referrals">("submissions");
   const [loading, setLoading] = useState(false);
 
   // Submissions tab state
@@ -199,6 +199,12 @@ export default function AdminPage() {
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
   const [opsRefreshing, setOpsRefreshing] = useState(false);
+
+  // Referrals tab state
+  const [referralData, setReferralData] = useState<{ codes: Array<Record<string, unknown>>; credits: Array<Record<string, unknown>>; metrics: Record<string, number> } | null>(null);
+  const [creditEmail, setCreditEmail] = useState("");
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditReason, setCreditReason] = useState("");
 
   // Modal state
   const [modal, setModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
@@ -240,6 +246,15 @@ export default function AdminPage() {
     } catch {}
   }, [authHeaders]);
 
+  const fetchReferrals = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/referrals", { headers: authHeaders() });
+      if (res.status === 401) { setAuthenticated(false); return; }
+      const data = await res.json();
+      setReferralData(data);
+    } catch {}
+  }, [authHeaders]);
+
   const fetchOps = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/ops", { headers: authHeaders() });
@@ -271,6 +286,7 @@ export default function AdminPage() {
     if (activeTab === "submissions") fetchSubmissions();
     if (activeTab === "applications") fetchAllApps();
     if (activeTab === "ops") fetchOps();
+    if (activeTab === "referrals") fetchReferrals();
   }, [authenticated, activeTab, fetchSubmissions, fetchAllApps, fetchOps]);
 
   // Auto-refresh ops tab
@@ -429,7 +445,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-6">
           <Link href="/" className="font-serif text-xl">Seis<span className="text-[#0d7a5f]">ly</span> <span className="text-xs text-[#aaa] font-sans ml-1">Admin</span></Link>
           <div className="flex gap-1">
-            {(["submissions", "applications", "ops"] as const).map(tab => (
+            {(["submissions", "applications", "ops", "referrals"] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeTab === tab ? "bg-[#e8f5f1] text-[#0d7a5f]" : "text-[#888] hover:text-[#1a1a18]"}`}>
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -890,6 +906,145 @@ export default function AdminPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ══════ TAB 4: REFERRALS ══════ */}
+        {activeTab === "referrals" && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="font-serif text-2xl">Referrals</h1>
+              <button onClick={fetchReferrals} className="text-xs text-[#0d7a5f] hover:underline">Refresh</button>
+            </div>
+
+            {!referralData ? (
+              <p className="text-sm text-[#888]">Loading...</p>
+            ) : (
+              <>
+                {/* Metrics */}
+                <div className="grid grid-cols-4 gap-3 mb-8">
+                  {[
+                    { label: "Active codes", value: referralData.metrics.activeCodes },
+                    { label: "Total uses", value: referralData.metrics.totalUses },
+                    { label: "Credits issued", value: `£${referralData.metrics.totalCreditsIssued}` },
+                    { label: "Credits outstanding", value: `£${referralData.metrics.totalCreditsOutstanding}` },
+                  ].map(m => (
+                    <div key={m.label} className="bg-white border border-[#e8e8e4] rounded-xl p-4">
+                      <p className="text-xs text-[#888]">{m.label}</p>
+                      <p className="font-serif text-2xl">{m.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Referral codes table */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden mb-6">
+                  <div className="px-4 py-3 border-b border-[#e8e8e4] bg-[#f5f5f2]">
+                    <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Referral codes</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-[#f0f0ec]">
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Code</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Referrer</th>
+                          <th className="text-right px-4 py-2 font-medium text-[#888]">Uses</th>
+                          <th className="text-right px-4 py-2 font-medium text-[#888]">Credits</th>
+                          <th className="text-right px-4 py-2 font-medium text-[#888]">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#f0f0ec]">
+                        {referralData.codes.map((c) => (
+                          <tr key={String(c.code)} className="hover:bg-[#fafaf8]">
+                            <td className="px-4 py-2 font-mono">{String(c.code)}</td>
+                            <td className="px-4 py-2 text-[#666]">{String(c.referrer_email)}</td>
+                            <td className="px-4 py-2 text-right">{Number(c.total_uses)}</td>
+                            <td className="px-4 py-2 text-right">£{Number(c.total_credits_earned)}</td>
+                            <td className="px-4 py-2 text-right">
+                              <button
+                                onClick={async () => {
+                                  await fetch("/api/admin/referrals", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json", ...authHeaders() },
+                                    body: JSON.stringify({ action: "toggle_code", code: c.code }),
+                                  });
+                                  fetchReferrals();
+                                }}
+                                className={`text-[10px] px-2 py-1 rounded border ${c.is_active ? "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]" : "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]"}`}>
+                                {c.is_active ? "Active" : "Inactive"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Credit balances */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl overflow-hidden mb-6">
+                  <div className="px-4 py-3 border-b border-[#e8e8e4] bg-[#f5f5f2]">
+                    <p className="text-xs font-medium text-[#888] uppercase tracking-wide">Credit balances</p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-[#f0f0ec]">
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">Email</th>
+                          <th className="text-right px-4 py-2 font-medium text-[#888]">Balance</th>
+                          <th className="text-right px-4 py-2 font-medium text-[#888]">Updated</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#f0f0ec]">
+                        {referralData.credits.map((c) => (
+                          <tr key={String(c.email)} className="hover:bg-[#fafaf8]">
+                            <td className="px-4 py-2 text-[#666]">{String(c.email)}</td>
+                            <td className="px-4 py-2 text-right font-medium">£{Number(c.balance)}</td>
+                            <td className="px-4 py-2 text-right text-[#888]">{c.updated_at ? new Date(String(c.updated_at)).toLocaleDateString('en-GB') : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Manual credit adjustment */}
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-4">
+                  <p className="text-xs font-medium text-[#888] uppercase tracking-wide mb-3">Manual credit adjustment</p>
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1">
+                      <label className="block text-xs text-[#888] mb-1">Email</label>
+                      <input value={creditEmail} onChange={e => setCreditEmail(e.target.value)}
+                        className="w-full border border-[#e8e8e4] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0d7a5f]" placeholder="founder@company.com" />
+                    </div>
+                    <div className="w-24">
+                      <label className="block text-xs text-[#888] mb-1">Amount (£)</label>
+                      <input value={creditAmount} onChange={e => setCreditAmount(e.target.value)} type="number"
+                        className="w-full border border-[#e8e8e4] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0d7a5f]" placeholder="10" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-[#888] mb-1">Reason</label>
+                      <input value={creditReason} onChange={e => setCreditReason(e.target.value)}
+                        className="w-full border border-[#e8e8e4] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#0d7a5f]" placeholder="Manual adjustment" />
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!creditEmail || !creditAmount) return;
+                        await fetch("/api/admin/referrals", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", ...authHeaders() },
+                          body: JSON.stringify({ action: "adjust_credit", email: creditEmail, amount: Number(creditAmount), reason: creditReason }),
+                        });
+                        setCreditEmail(""); setCreditAmount(""); setCreditReason("");
+                        fetchReferrals();
+                        showToast("Credit adjusted");
+                      }}
+                      className="text-xs bg-[#0d7a5f] text-white px-4 py-2 rounded-lg hover:bg-[#0a5c47] transition-colors">
+                      Apply
+                    </button>
                   </div>
                 </div>
               </>
