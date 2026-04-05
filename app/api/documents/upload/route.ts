@@ -1,10 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+const uploadLimiter = rateLimit({ name: 'document-upload', maxRequests: 20, windowMs: 60 * 60 * 1000 })
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -33,6 +36,12 @@ function sanitiseFilename(name: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const { success } = uploadLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File

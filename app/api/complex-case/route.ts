@@ -4,6 +4,8 @@ import { Resend } from 'resend'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { sanitiseHtml } from '@/lib/sanitise-html'
 
+export const maxDuration = 30
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!

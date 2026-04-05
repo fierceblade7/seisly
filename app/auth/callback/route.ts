@@ -7,8 +7,11 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const ALLOWED_ORIGINS = ['https://seisly.com', 'http://localhost:3000']
+
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams, origin: rawOrigin } = new URL(request.url)
+  const origin = ALLOWED_ORIGINS.includes(rawOrigin) ? rawOrigin : 'https://seisly.com'
   const code = searchParams.get("code")
 
   if (code) {

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sanitiseHtml } from '@/lib/sanitise-html'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,17 @@ const supabase = createClient(
 )
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
+const authoriseLimiter = rateLimit({ name: 'application-authorise', maxRequests: 10, windowMs: 60 * 60 * 1000 })
+
+export const maxDuration = 30
+
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const { success } = authoriseLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   try {
     const { email, scheme, name, companyName } = await request.json()
 

@@ -1,13 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+const letterLimiter = rateLimit({ name: 'authority-letter', maxRequests: 10, windowMs: 60 * 60 * 1000 })
+
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers)
+  const { success } = letterLimiter.check(ip)
+  if (!success) {
+    return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
+  }
+
   try {
     const { email, scheme } = await request.json()
 
@@ -22,8 +31,8 @@ export async function POST(request: NextRequest) {
       .eq('scheme', scheme)
       .single()
 
-    if (!app) {
-      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    if (!app || !app.paid) {
+      return NextResponse.json({ error: 'Application not found or not paid' }, { status: 404 })
     }
 
     if (!app.declared_by_name || !app.declared_at) {
