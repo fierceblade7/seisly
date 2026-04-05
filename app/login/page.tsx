@@ -30,7 +30,7 @@ export default function LoginPage() {
       const { error: authError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'}/auth/callback`,
         },
       });
       if (authError) throw authError;
