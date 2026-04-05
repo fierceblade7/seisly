@@ -11,7 +11,7 @@ const saveLimiter = rateLimit({ name: 'application-save', maxRequests: 30, windo
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = saveLimiter.check(ip)
+  const { success } = await saveLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }
@@ -54,6 +54,12 @@ export async function POST(request: NextRequest) {
       new_market_details: body.newMarketDetails || null,
       signatory_name: body.signatoryName || null,
       signatory_position: body.signatoryPosition || null,
+      qualifying_activity: body.qualifyingActivity || null,
+      is_kic: body.isKic ?? null,
+      kick_reason: body.kickReason || null,
+      proposed_investors: body.proposedInvestors || null,
+      ...(body.documents_uploaded_at ? { documents_uploaded_at: body.documents_uploaded_at } : {}),
+      ...(body.status ? { status: body.status } : {}),
       updated_at: new Date().toISOString(),
     }
 

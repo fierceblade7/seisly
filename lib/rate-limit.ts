@@ -1,56 +1,47 @@
-// WARNING: Per-instance in-memory rate limiter.
-// This does NOT work globally across Vercel serverless instances.
-// Each cold start creates a fresh Map, and concurrent instances
-// each have their own independent rate limit state.
-//
-// TODO: For production scale, replace with Redis-based rate limiting
-// (e.g. @upstash/ratelimit with Upstash Redis) to enforce limits
-// globally across all instances.
+// Global rate limiter using Upstash Redis.
+// Enforces limits across all Vercel serverless instances.
 
-interface RateLimitEntry {
-  count: number
-  resetAt: number
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+})
+
+function msToWindow(ms: number): `${number} s` | `${number} m` | `${number} h` | `${number} d` {
+  if (ms >= 24 * 60 * 60 * 1000) return `${Math.round(ms / (24 * 60 * 60 * 1000))} d` as `${number} d`
+  if (ms >= 60 * 60 * 1000) return `${Math.round(ms / (60 * 60 * 1000))} h` as `${number} h`
+  if (ms >= 60 * 1000) return `${Math.round(ms / (60 * 1000))} m` as `${number} m`
+  return `${Math.round(ms / 1000)} s` as `${number} s`
 }
 
-const stores = new Map<string, Map<string, RateLimitEntry>>()
-
-function getStore(name: string): Map<string, RateLimitEntry> {
-  if (!stores.has(name)) {
-    stores.set(name, new Map())
-  }
-  return stores.get(name)!
-}
-
+/**
+ * Create a rate limiter with the same API as the old in-memory version.
+ * Uses Upstash Redis sliding window for global enforcement.
+ */
 export function rateLimit(options: {
   name: string
   maxRequests: number
   windowMs: number
 }) {
-  const store = getStore(options.name)
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(options.maxRequests, msToWindow(options.windowMs)),
+    prefix: `seisly:ratelimit:${options.name}`,
+    analytics: true,
+  })
 
   return {
-    check(ip: string): { success: boolean; remaining: number } {
-      const now = Date.now()
-      const entry = store.get(ip)
-
-      // Clean up expired entries periodically
-      if (store.size > 10000) {
-        for (const [key, val] of store) {
-          if (val.resetAt <= now) store.delete(key)
-        }
+    async check(ip: string): Promise<{ success: boolean; remaining: number }> {
+      try {
+        const result = await limiter.limit(ip)
+        return { success: result.success, remaining: result.remaining }
+      } catch (err) {
+        // If Redis is down, allow the request (fail open)
+        console.error(`[Rate Limit] Redis error for ${options.name}:`, err)
+        return { success: true, remaining: options.maxRequests }
       }
-
-      if (!entry || entry.resetAt <= now) {
-        store.set(ip, { count: 1, resetAt: now + options.windowMs })
-        return { success: true, remaining: options.maxRequests - 1 }
-      }
-
-      if (entry.count >= options.maxRequests) {
-        return { success: false, remaining: 0 }
-      }
-
-      entry.count++
-      return { success: true, remaining: options.maxRequests - entry.count }
     },
   }
 }

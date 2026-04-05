@@ -157,7 +157,7 @@ Be thorough. If you cannot verify something from the documents provided, set con
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = reviewLimiter.check(ip)
+  const { success } = await reviewLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

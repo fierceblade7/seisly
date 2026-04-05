@@ -14,7 +14,7 @@ const PRICE_IDS: Record<string, string | undefined> = {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = checkoutLimiter.check(ip)
+  const { success } = await checkoutLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

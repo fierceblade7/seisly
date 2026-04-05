@@ -16,7 +16,7 @@ export const maxDuration = 30
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = authoriseLimiter.check(ip)
+  const { success } = await authoriseLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

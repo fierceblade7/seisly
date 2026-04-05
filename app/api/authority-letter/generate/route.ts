@@ -12,7 +12,7 @@ const letterLimiter = rateLimit({ name: 'authority-letter', maxRequests: 10, win
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = letterLimiter.check(ip)
+  const { success } = await letterLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

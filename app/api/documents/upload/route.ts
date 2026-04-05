@@ -37,7 +37,7 @@ function sanitiseFilename(name: string): string {
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = uploadLimiter.check(ip)
+  const { success } = await uploadLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

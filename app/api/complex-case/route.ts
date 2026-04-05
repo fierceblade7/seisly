@@ -16,7 +16,7 @@ const complexCaseLimiter = rateLimit({ name: 'complex-case', maxRequests: 20, wi
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = complexCaseLimiter.check(ip)
+  const { success } = await complexCaseLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

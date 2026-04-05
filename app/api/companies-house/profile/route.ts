@@ -5,7 +5,7 @@ const chLimiter = rateLimit({ name: 'companies-house-profile', maxRequests: 30, 
 
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req.headers);
-  const { success } = chLimiter.check(ip);
+  const { success } = await chLimiter.check(ip);
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 });
   }

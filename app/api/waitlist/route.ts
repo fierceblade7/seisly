@@ -11,7 +11,7 @@ const waitlistLimiter = rateLimit({ name: 'waitlist', maxRequests: 5, windowMs: 
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = waitlistLimiter.check(ip)
+  const { success } = await waitlistLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }

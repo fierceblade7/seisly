@@ -11,7 +11,7 @@ const declareLimiter = rateLimit({ name: 'application-declare', maxRequests: 10,
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers)
-  const { success } = declareLimiter.check(ip)
+  const { success } = await declareLimiter.check(ip)
   if (!success) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }
