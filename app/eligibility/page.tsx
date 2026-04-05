@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 type Answer = "yes" | "no" | null;
@@ -163,6 +164,16 @@ type Scheme = "seis" | "eis" | "both";
 const PRICES: Record<Scheme, string> = { seis: "149", eis: "149", both: "199" };
 
 export default function EligibilityPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#fafaf8]" />}>
+      <EligibilityPageContent />
+    </Suspense>
+  );
+}
+
+function EligibilityPageContent() {
+  const searchParams = useSearchParams();
+  const hasReferral = searchParams.get("ref") === "valid";
   const [step, setStep] = useState<"scheme" | "questions" | "result">("scheme");
   const [scheme, setScheme] = useState<Scheme | null>(null);
   const [currentQ, setCurrentQ] = useState(0);
@@ -511,6 +522,14 @@ export default function EligibilityPage() {
       <div className="h-1 bg-[#e8e8e4]">
         <div className="h-1 bg-[#0d7a5f] transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
+
+      {hasReferral && (
+        <div className="max-w-xl mx-auto px-6 pt-4">
+          <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-lg px-4 py-3">
+            <p className="text-xs text-[#0d7a5f] font-medium">£10 discount applied - your referral code has been saved.</p>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-xl mx-auto px-6 py-16">
 
