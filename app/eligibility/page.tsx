@@ -526,7 +526,7 @@ function EligibilityPageContent() {
       {hasReferral && (
         <div className="max-w-xl mx-auto px-6 pt-4">
           <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-lg px-4 py-3">
-            <p className="text-xs text-[#0d7a5f] font-medium">£10 discount applied - your referral code has been saved.</p>
+            <p className="text-xs text-[#0d7a5f] font-medium">£10 discount applied - prices updated below.</p>
           </div>
         </div>
       )}
@@ -545,9 +545,9 @@ function EligibilityPageContent() {
             </p>
             <div className="space-y-3">
               {[
-                { value: "seis" as Scheme, title: "SEIS only", price: "£149", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Most common for pre-seed" },
-                { value: "eis" as Scheme, title: "EIS only", price: "£149", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Series A and beyond" },
-                { value: "both" as Scheme, title: "SEIS and EIS", price: "£199", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
+                { value: "seis" as Scheme, title: "SEIS only", price: "£149", discountPrice: "£139", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Most common for pre-seed" },
+                { value: "eis" as Scheme, title: "EIS only", price: "£149", discountPrice: "£139", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Series A and beyond" },
+                { value: "both" as Scheme, title: "SEIS and EIS", price: "£199", discountPrice: "£189", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
               ].map((option) => (
                 <button
                   key={option.value}
@@ -557,7 +557,14 @@ function EligibilityPageContent() {
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium text-[#1a1a18] group-hover:text-[#0d7a5f] transition-colors">{option.title}</span>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      <span className="font-serif text-lg text-[#0d7a5f]">{option.price}</span>
+                      {hasReferral ? (
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-sm text-[#aaa] line-through">{option.price}</span>
+                          <span className="font-serif text-xl font-medium text-[#0d7a5f]">{option.discountPrice}</span>
+                        </span>
+                      ) : (
+                        <span className="font-serif text-lg text-[#0d7a5f]">{option.price}</span>
+                      )}
                       <span className="text-[11px] bg-[#f5f5f2] text-[#888] px-2 py-0.5 rounded">{option.tag}</span>
                     </div>
                   </div>
