@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-client";
+import Footer from "../components/Footer";
 
 const Logo = () => (
   <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
@@ -112,6 +113,7 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

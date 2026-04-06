@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
   title: "Acceptable Use Policy - Seisly",
@@ -94,16 +95,7 @@ export default function AcceptableUsePolicy() {
         </div>
       </div>
 
-      <footer className="bg-[#111] px-6 py-10 flex flex-wrap justify-between items-center gap-4">
-        <div className="font-serif text-xl text-white">Seis<span className="text-[#5DCAA5]">ly</span></div>
-        <div className="flex gap-6 text-xs text-[#555]">
-          <Link href="/privacy" className="hover:text-[#aaa]">Privacy</Link>
-          <Link href="/terms" className="hover:text-[#aaa]">Terms</Link>
-          <Link href="/cookies" className="hover:text-[#aaa]">Cookies</Link>
-          <Link href="/acceptable-use" className="hover:text-[#aaa]">Acceptable use</Link>
-        </div>
-        <p className="text-xs text-[#555]">&copy; 2026 Litigo Limited</p>
-      </footer>
+      <Footer />
     </div>
   );
 }

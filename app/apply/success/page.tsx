@@ -1,6 +1,7 @@
 "use client";
 import { Suspense } from "react";
 import Link from "next/link";
+import Footer from "../../components/Footer";
 
 const Logo = () => (
   <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
@@ -103,6 +104,7 @@ function SuccessPageContent() {
           You can also email them to <a href="mailto:support@seisly.com" className="text-[#0d7a5f]">support@seisly.com</a> if you prefer.
         </p>
       </div>
+      <Footer />
     </div>
   );
 }

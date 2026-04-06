@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Footer from "../../components/Footer";
 
 const Logo = () => (
   <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
@@ -498,6 +499,7 @@ function ReviewPageContent() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   )
 }

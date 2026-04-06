@@ -11,6 +11,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Footer from "../components/Footer";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -423,17 +424,20 @@ export default function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
-        <form onSubmit={handleLogin} className="bg-white border border-[#e8e8e4] rounded-xl p-8 w-full max-w-sm">
-          <h1 className="font-serif text-2xl mb-6">Seisly Admin</h1>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Admin password" autoFocus
-            className="w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-[#0d7a5f]" />
-          <button type="submit" disabled={loading}
-            className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50">
-            {loading ? "Checking..." : "Log in"}
-          </button>
-        </form>
+      <div className="min-h-screen bg-[#fafaf8] flex flex-col">
+        <div className="flex-1 flex items-center justify-center">
+          <form onSubmit={handleLogin} className="bg-white border border-[#e8e8e4] rounded-xl p-8 w-full max-w-sm">
+            <h1 className="font-serif text-2xl mb-6">Seisly Admin</h1>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="Admin password" autoFocus
+              className="w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm mb-4 focus:outline-none focus:border-[#0d7a5f]" />
+            <button type="submit" disabled={loading}
+              className="w-full bg-[#0d7a5f] text-white py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors disabled:opacity-50">
+              {loading ? "Checking..." : "Log in"}
+            </button>
+          </form>
+        </div>
+        <Footer />
       </div>
     );
   }
@@ -1150,6 +1154,7 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
