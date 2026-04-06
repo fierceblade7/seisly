@@ -236,7 +236,7 @@ export default function Home() {
             Built by the founder of the first SEIS fund on the market in 2012. Someone who has sat on all sides of the table: as the fund deploying investment, as the adviser helping founders get investor ready, and as a founder raising himself. Someone who has never, not even once, had an application not sail through first time.
           </p>
           <p className="text-sm text-[#888] leading-relaxed">
-            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for a form-filling exercise never made sense. Seisly fixes that. And as part of GoLitigo, when you need a specialist, we have one.
+            <strong className="text-[#ccc] font-medium">We have been in this world since 2012.</strong> We know what HMRC looks for, what trips founders up, and why paying thousands of pounds for what in many cases is a form-filling exercise never made sense. Seisly fixes that. And as part of GoLitigo, when you need a specialist, we have one.
           </p>
         </div>
       </section>
