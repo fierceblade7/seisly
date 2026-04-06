@@ -150,12 +150,12 @@ function ReviewPageContent() {
             {isExpress ? (
               <p className="text-sm text-[#666] leading-relaxed mb-4">
                 <span className="inline-block bg-[#fff8e6] border border-[#f5d88a] text-[#8a6500] text-xs px-2 py-0.5 rounded mb-2">Express Review</span><br />
-                Your application will be reviewed within 24-36 hours.
+                Express Review &ndash; your application will be reviewed within 24&ndash;36 hours.
                 {slaDeadline && <> Expected by {new Date(slaDeadline).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}.</>}
               </p>
             ) : (
               <p className="text-sm text-[#666] leading-relaxed mb-4">
-                Your application is being reviewed. Standard review time: up to 72 hours. At busy times, this may take longer - we will let you know.
+                Your application is now being reviewed. Standard review: up to 72 hours. At busy times, this may take longer &ndash; we will let you know.
                 {slaDeadline && <> Expected by {new Date(slaDeadline).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}.</>}
               </p>
             )}

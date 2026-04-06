@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-const Logo = () => (
-  <svg width="160" height="42" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
-    <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
-    <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
-    <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
-  </svg>
-);
+import Nav from "./components/Nav";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -100,23 +92,7 @@ export default function Home() {
     <div className="bg-[#fafaf8] text-[#1a1a18] font-sans">
 
       {/* NAV */}
-      <nav className="sticky top-0 z-50 bg-[#fafaf8]/90 backdrop-blur-md border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between">
-        <Link href="/">
-          <Logo />
-        </Link>
-        <div className="flex items-center gap-6">
-          <a href="#how" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">How it works</a>
-          <a href="#pricing" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">Pricing</a>
-          <a href="#faq" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">FAQ</a>
-          <Link href="/about" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">About</Link>
-          <Link href="/login" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">Sign in</Link>
-          <Link href="/eligibility">
-            <button className="bg-[#0d7a5f] text-white text-sm font-medium px-5 py-2 rounded-md hover:bg-[#0a5c47] transition-colors">
-              Start free &rarr;
-            </button>
-          </Link>
-        </div>
-      </nav>
+      <Nav />
 
       {/* HERO */}
       <section className="px-6 pt-24 pb-12 text-center max-w-4xl mx-auto">
@@ -270,7 +246,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">How it works</p>
           <h2 className="font-serif text-[clamp(30px,3.5vw,46px)] leading-tight tracking-tight mb-2">
-            From zero to HMRC-ready<br />in under an hour
+            Your part takes under 30 minutes.<br />We handle the rest.
           </h2>
           <p className="text-base text-[#666] mb-12 font-light">We handle the complexity. You focus on building.</p>
           <div className="divide-y divide-[#f0f0ec]">
