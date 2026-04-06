@@ -34,6 +34,6 @@ test.describe('Review page states', () => {
 
   test('should show email notification text on holding page', async ({ page }) => {
     await page.goto('/apply/review?email=test@example.com&scheme=seis')
-    await expect(page.getByText('We will email you when your review is ready')).toBeVisible()
+    await expect(page.getByText('when there is an update')).toBeVisible()
   })
 })
