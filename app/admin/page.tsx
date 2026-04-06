@@ -44,6 +44,9 @@ interface Application {
   sla_deadline: string;
   sla_notified: boolean;
   review_sla_hours: number;
+  decline_reason: string;
+  free_resubmission_available: boolean;
+  free_resubmission_used: boolean;
   // All other fields from the application
   [key: string]: unknown;
 }
@@ -85,7 +88,7 @@ const STATUS_LABELS: Record<string, string> = {
   declared: "Declared", authorised: "Authorised", submitted: "Submitted",
   amber: "Amber", needs_attention: "Needs attention", ready: "Ready",
   pending: "Pending", in_progress: "In progress", failed: "Failed",
-  pass: "Pass", fail: "Fail",
+  pass: "Pass", fail: "Fail", declined: "Declined",
 };
 
 const VALUE_LABELS: Record<string, Record<string, string>> = {
@@ -168,6 +171,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     amber: "bg-[#fff8e6] text-[#8a6500] border-[#f5d88a]",
     needs_attention: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
     failed: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
+    declined: "bg-[#fef2f2] text-[#c0392b] border-[#fecaca]",
     ready: "bg-[#e8f5f1] text-[#0d7a5f] border-[#c0e8db]",
   };
   return (
@@ -199,6 +203,9 @@ export default function AdminPage() {
   const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
   const [runningReview, setRunningReview] = useState<string | null>(null);
   const [releasingReview, setReleasingReview] = useState<string | null>(null);
+  const [decliningApp, setDecliningApp] = useState<string | null>(null);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declineSubmitting, setDeclineSubmitting] = useState(false);
 
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
@@ -379,6 +386,23 @@ export default function AdminPage() {
       fetchAllApps();
     } catch {}
     finally { setReleasingReview(null); }
+  };
+
+  const declineApp = async (app: Application) => {
+    if (!declineReason.trim()) return;
+    setDeclineSubmitting(true);
+    try {
+      await fetch("/api/admin/decline", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ email: app.email, scheme: app.scheme, reason: declineReason }),
+      });
+      setDecliningApp(null);
+      setDeclineReason("");
+      showToast("Application declined and founder notified");
+      fetchAllApps();
+    } catch { showToast("Decline failed", "error"); }
+    finally { setDeclineSubmitting(false); }
   };
 
   const updateStatus = async (app: Application, newStatus: string) => {
@@ -761,7 +785,41 @@ export default function AdminPage() {
                         {app.review_released && (
                           <span className="text-xs text-[#0d7a5f] px-4 py-2">Released to founder</span>
                         )}
+                        {app.status !== 'declined' && app.status !== 'submitted' && (
+                          <button onClick={() => { setDecliningApp(key); setDeclineReason(""); }}
+                            className="text-xs border border-[#fecaca] text-[#c0392b] px-4 py-2 rounded-lg hover:bg-[#fef2f2] transition-colors">
+                            Decline
+                          </button>
+                        )}
+                        {app.status === 'declined' && (
+                          <span className="text-xs text-[#c0392b] px-4 py-2">Declined{app.free_resubmission_used ? ' (resubmitted)' : ''}</span>
+                        )}
                       </div>
+
+                      {/* Decline modal */}
+                      {decliningApp === key && (
+                        <div className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-4 mb-4">
+                          <p className="text-xs font-medium text-[#c0392b] mb-2">Decline application</p>
+                          <p className="text-[10px] text-[#888] mb-3">Explain why the application would not succeed with HMRC and what needs to change. This will be sent to the founder.</p>
+                          <textarea
+                            value={declineReason}
+                            onChange={e => setDeclineReason(e.target.value)}
+                            rows={4}
+                            className="w-full border border-[#fecaca] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#c0392b] bg-white resize-none mb-3"
+                            placeholder="Explain the issues and what the founder needs to fix..."
+                          />
+                          <div className="flex gap-2">
+                            <button onClick={() => setDecliningApp(null)}
+                              className="flex-1 border border-[#e8e8e4] text-[#888] py-2 rounded-lg text-xs hover:border-[#ccc] transition-colors">
+                              Cancel
+                            </button>
+                            <button onClick={() => declineApp(app)} disabled={declineSubmitting || !declineReason.trim()}
+                              className="flex-1 bg-[#c0392b] text-white py-2 rounded-lg text-xs hover:bg-[#a93226] transition-colors disabled:opacity-50">
+                              {declineSubmitting ? "Declining..." : "Decline and notify founder"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Admin notes */}
                       <div className="mb-4">
@@ -783,7 +841,7 @@ export default function AdminPage() {
                       <div className="mb-4">
                         <p className="text-xs font-medium text-[#888] mb-2">Update status</p>
                         <div className="flex gap-2 flex-wrap">
-                          {["draft", "paid", "documents_uploaded", "declared", "authorised", "submitted"].map(s => (
+                          {["draft", "paid", "documents_uploaded", "declared", "authorised", "submitted", "declined"].map(s => (
                             <button key={s} onClick={() => updateStatus(app, s)}
                               disabled={statusUpdating === key || app.status === s}
                               className={`text-[10px] px-3 py-1.5 rounded border transition-colors ${app.status === s ? "bg-[#0d7a5f] text-white border-[#0d7a5f]" : "border-[#e8e8e4] text-[#888] hover:border-[#0d7a5f] hover:text-[#0d7a5f]"}`}>

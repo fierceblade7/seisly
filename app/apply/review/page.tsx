@@ -44,6 +44,9 @@ function ReviewPageContent() {
   const [isExpress, setIsExpress] = useState(false)
   const [slaDeadline, setSlaDeadline] = useState<string | null>(null)
   const [slaHours, setSlaHours] = useState(72)
+  const [declined, setDeclined] = useState(false)
+  const [declineReason, setDeclineReason] = useState('')
+  const [freeResubmission, setFreeResubmission] = useState(false)
 
   // Declaration/authorisation flow
   const [flowStep, setFlowStep] = useState<'review' | 'declare' | 'declared' | 'authorised'>('review')
@@ -67,6 +70,11 @@ function ReviewPageContent() {
         if (data.is_express) setIsExpress(true)
         if (data.sla_deadline) setSlaDeadline(data.sla_deadline)
         if (data.review_sla_hours) setSlaHours(data.review_sla_hours)
+        if (data.status === 'declined') {
+          setDeclined(true)
+          if (data.decline_reason) setDeclineReason(data.decline_reason)
+          if (data.free_resubmission_available) setFreeResubmission(true)
+        }
         if (data.status === 'declared') setFlowStep('declared')
         if (data.status === 'authorised') setFlowStep('authorised')
 
@@ -152,6 +160,33 @@ function ReviewPageContent() {
               </p>
             )}
             <p className="text-xs text-[#aaa]">You can close this page. We will email you at <strong>{email}</strong> when there is an update.</p>
+          </div>
+        )}
+
+        {/* Declined state */}
+        {declined && (
+          <div className="space-y-4">
+            <div className="bg-[#fef2f2] border border-[#fecaca] rounded-xl p-6">
+              <p className="text-sm font-medium text-[#c0392b] mb-2">We have reviewed your application and believe it needs some changes before it can be submitted to HMRC.</p>
+            </div>
+
+            {declineReason && (
+              <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
+                <p className="text-xs font-medium text-[#888] uppercase tracking-wide mb-3">What we found</p>
+                <p className="text-sm text-[#444] leading-relaxed whitespace-pre-wrap">{declineReason}</p>
+              </div>
+            )}
+
+            {freeResubmission && (
+              <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6 text-center">
+                <p className="text-sm text-[#555] mb-4">Once you have addressed the points above, you can resubmit at no extra charge.</p>
+                <Link href="/apply">
+                  <button className="bg-[#0d7a5f] text-white px-8 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
+                    Resubmit for free
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 

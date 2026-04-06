@@ -47,7 +47,7 @@ export default function AboutPage() {
               I built Seisly because asking startup founders to pay £2,000 or more never made sense to me. Most founders raising pre-seed or seed rounds don&apos;t have that kind of money to spend on pre-raise admin. They shouldn&apos;t have to.
             </p>
             <p>
-              Seisly takes everything I&apos;ve learned from over two decades of EIS and SEIS applications and puts it into a platform that any founder can use. The AI drafts your application. I review it before it goes to HMRC. You get the same quality that used to cost thousands, for a fraction of the price.
+              Seisly takes everything I&apos;ve learned from over two decades of EIS and SEIS applications and puts it into an AI that I and my expert colleagues have trained. The AI drafts your application. I &ndash; or one of my expert colleagues &ndash; review it before it goes to HMRC. If we think anything needs more work, we&apos;ll tell you exactly what to fix. You get the same quality that used to cost thousands, for a fraction of the price.
             </p>
             <p>
               If you have questions, find me on{" "}
