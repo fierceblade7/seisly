@@ -108,6 +108,7 @@ export default function Home() {
           <a href="#how" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">How it works</a>
           <a href="#pricing" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">Pricing</a>
           <a href="#faq" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">FAQ</a>
+          <Link href="/about" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">About</Link>
           <Link href="/login" className="text-sm text-[#555] hover:text-[#1a1a18] transition-colors hidden sm:block">Sign in</Link>
           <Link href="/eligibility">
             <button className="bg-[#0d7a5f] text-white text-sm font-medium px-5 py-2 rounded-md hover:bg-[#0a5c47] transition-colors">
