@@ -26,15 +26,22 @@ export async function POST(request: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const { email, scheme } = session.metadata || {}
+    const { email, scheme, express } = session.metadata || {}
 
     if (email && scheme) {
+      const isExpress = express === 'true'
+      const slaHours = isExpress ? 36 : 72
+      const slaDeadline = new Date(Date.now() + slaHours * 60 * 60 * 1000).toISOString()
+
       const { data, error } = await supabase
         .from('applications')
         .update({
           paid: true,
           paid_at: new Date().toISOString(),
           status: 'paid',
+          is_express: isExpress,
+          review_sla_hours: slaHours,
+          sla_deadline: slaDeadline,
         })
         .eq('email', email)
         .eq('scheme', scheme)

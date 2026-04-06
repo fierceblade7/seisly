@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Serif, DM_Sans } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "./components/CookieBanner";
+import LaunchBanner from "./components/LaunchBanner";
 import { Analytics } from "@vercel/analytics/next";
 
 const instrumentSerif = Instrument_Serif({
@@ -19,11 +20,11 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
-  description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £149. Prepared and submitted to HMRC on your behalf.",
+  description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £179. Prepared and submitted to HMRC on your behalf.",
   metadataBase: new URL("https://seisly.com"),
   openGraph: {
     title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
-    description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £149.",
+    description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £179.",
     url: "https://seisly.com",
     siteName: "Seisly",
     locale: "en_GB",
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Seisly - SEIS and EIS Advance Assurance, Done for You",
-    description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £149.",
+    description: "AI trained by the founder of the UK's first SEIS fund. Working with startups on SEIS and EIS applications since 2012. From £179.",
     images: ["/og-image.png"],
   },
 };
@@ -76,6 +77,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${instrumentSerif.variable} ${dmSans.variable} antialiased`}>
+        <LaunchBanner />
         {children}
         <CookieBanner />
         <Analytics />

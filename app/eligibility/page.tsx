@@ -161,7 +161,7 @@ const complexityQuestions: Question[] = [
 
 type Scheme = "seis" | "eis" | "both";
 
-const PRICES: Record<Scheme, string> = { seis: "149", eis: "149", both: "199" };
+const PRICES: Record<Scheme, string> = { seis: "179", eis: "179", both: "249" };
 
 export default function EligibilityPage() {
   return (
@@ -545,9 +545,9 @@ function EligibilityPageContent() {
             </p>
             <div className="space-y-3">
               {[
-                { value: "seis" as Scheme, title: "SEIS only", price: "£149", discountPrice: "£139", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Pre-seed and seed" },
-                { value: "eis" as Scheme, title: "EIS only", price: "£149", discountPrice: "£139", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Seed and beyond" },
-                { value: "both" as Scheme, title: "SEIS and EIS", price: "£199", discountPrice: "£189", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
+                { value: "seis" as Scheme, title: "SEIS only", price: "£179", discountPrice: "£169", desc: "Seed Enterprise Investment Scheme. For very early stage companies raising up to £250,000.", tag: "Pre-seed and seed" },
+                { value: "eis" as Scheme, title: "EIS only", price: "£179", discountPrice: "£169", desc: "Enterprise Investment Scheme. For more established companies raising up to £5 million.", tag: "Seed and beyond" },
+                { value: "both" as Scheme, title: "SEIS and EIS", price: "£249", discountPrice: "£239", desc: "Apply for both at the same time. Common when you plan to top up a SEIS round with EIS investment.", tag: "Best value" },
               ].map((option) => (
                 <button
                   key={option.value}

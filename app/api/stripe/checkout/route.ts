@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { scheme, email, applicationId } = await request.json()
+    const { scheme, email, applicationId, express } = await request.json()
 
     const priceId = PRICE_IDS[scheme]
     if (!scheme || !priceId) {
@@ -32,18 +32,26 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://seisly.com'
 
+    // Build line items
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: priceId, quantity: 1 },
+    ]
+
+    // Add Express Review add-on if selected
+    const isExpress = express === true
+    if (isExpress && process.env.STRIPE_PRICE_EXPRESS) {
+      lineItems.push({ price: process.env.STRIPE_PRICE_EXPRESS, quantity: 1 })
+    }
+
     // Check for referral code in cookie
     const referralCookie = request.cookies.get('seisly_referral')?.value
-    let discounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined
     let referralCodeUsed: string | undefined
 
     if (referralCookie && process.env.STRIPE_REFERRAL_COUPON_ID) {
       const referral = await lookupReferralCode(referralCookie)
       if (referral.valid && referral.referrerEmail !== email) {
-        discounts = [{ coupon: process.env.STRIPE_REFERRAL_COUPON_ID }]
         referralCodeUsed = referralCookie.toUpperCase()
         await recordReferralUse(referralCodeUsed, email)
-        // Store referral code on the application
         await supabase
           .from('applications')
           .update({ referral_code_used: referralCodeUsed })
@@ -56,17 +64,13 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       mode: 'payment',
       customer_email: email || undefined,
-      ...(discounts ? { discounts } : {}),
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      allow_promotion_codes: true,
+      line_items: lineItems,
       metadata: {
         applicationId: applicationId || '',
         scheme,
         email: email || '',
+        express: isExpress ? 'true' : 'false',
         ...(referralCodeUsed ? { referral_code: referralCodeUsed } : {}),
       },
       success_url: `${baseUrl}/apply/success?session_id={CHECKOUT_SESSION_ID}`,

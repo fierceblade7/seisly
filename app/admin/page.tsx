@@ -40,6 +40,10 @@ interface Application {
   review_overrides: Record<string, unknown>;
   ai_review_result: Record<string, unknown>;
   review_released: boolean;
+  is_express: boolean;
+  sla_deadline: string;
+  sla_notified: boolean;
+  review_sla_hours: number;
   // All other fields from the application
   [key: string]: unknown;
 }
@@ -567,7 +571,10 @@ export default function AdminPage() {
                             setExpandedApp(isExpanded ? null : key);
                             if (!isExpanded && !editingNotes[key]) setEditingNotes(prev => ({ ...prev, [key]: app.admin_notes || "" }));
                           }}>
-                            <td className="px-4 py-3 font-medium text-[#1a1a18]">{app.company_name || "-"}</td>
+                            <td className="px-4 py-3 font-medium text-[#1a1a18]">
+                              {app.company_name || "-"}
+                              {app.is_express && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-[#fff8e6] text-[#8a6500] border border-[#f5d88a]">EXPRESS</span>}
+                            </td>
                             <td className="px-4 py-3 text-[#666]">{app.email}</td>
                             <td className="px-4 py-3">{app.scheme?.toUpperCase()}</td>
                             <td className="px-4 py-3"><StatusBadge status={app.status || "draft"} /></td>
@@ -705,6 +712,39 @@ export default function AdminPage() {
                           </div>
                         );
                       })}
+
+                      {/* SLA info */}
+                      {app.sla_deadline && (
+                        <div className="mb-4 flex items-center gap-3">
+                          <span className="text-xs text-[#888]">SLA deadline:</span>
+                          {(() => {
+                            const hoursLeft = (new Date(String(app.sla_deadline)).getTime() - Date.now()) / (1000 * 60 * 60);
+                            const color = hoursLeft > 12 ? 'text-[#0d7a5f]' : hoursLeft > 0 ? 'text-[#8a6500]' : 'text-[#c0392b]';
+                            return <span className={`text-xs font-medium ${color}`}>
+                              {new Date(String(app.sla_deadline)).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                              {hoursLeft > 0 ? ` (${Math.round(hoursLeft)}h remaining)` : ' (OVERDUE)'}
+                            </span>;
+                          })()}
+                          {!app.is_express && !app.sla_notified && (
+                            <button
+                              onClick={async () => {
+                                const confirmed = await showConfirm("Notify delay", `Send delay notification to ${app.email}?`);
+                                if (!confirmed) return;
+                                await fetch("/api/admin/notify-delay", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json", ...authHeaders() },
+                                  body: JSON.stringify({ email: app.email, scheme: app.scheme, estimatedDays: 5 }),
+                                });
+                                showToast("Delay notification sent");
+                                fetchAllApps();
+                              }}
+                              className="text-[10px] border border-[#f5d88a] text-[#8a6500] px-2 py-1 rounded hover:bg-[#fff8e6] transition-colors">
+                              Notify delay
+                            </button>
+                          )}
+                          {app.sla_notified && <span className="text-[10px] text-[#aaa]">Delay notified</span>}
+                        </div>
+                      )}
 
                       {/* Admin action buttons */}
                       <div className="flex gap-3 mb-4">

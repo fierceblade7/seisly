@@ -51,9 +51,9 @@ export default function Home() {
   ];
 
   const vsRows = [
-    { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£149" },
-    { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£149" },
-    { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£199" },
+    { label: "SEIS advance assurance", a: "~£2,000 + VAT", b: "~£400 + VAT + subscription", c: "£179" },
+    { label: "EIS advance assurance", a: "~£2,500 + VAT", b: "~£400 + VAT + subscription", c: "£179" },
+    { label: "SEIS and EIS together", a: "~£3,000 + VAT", b: "~£800 + VAT + subscription", c: "£249" },
     { label: "Compliance statement (SEIS/EIS)", a: "~£1,500 + VAT", b: "~£500 + VAT", c: "£399 (separate product)" },
     { label: "Investor finder tool", a: "Not offered", b: "~£600 + VAT", c: <span>£49/mo (<a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="hover:underline">Novar</a>)</span> },
     { label: "No monthly subscription", a: "✗", b: "✗", c: "✓" },
@@ -66,15 +66,15 @@ export default function Home() {
 
   const plans = [
     {
-      name: "SEIS only", price: "149", featured: false,
+      name: "SEIS only", price: "179", featured: false,
       features: ["Eligibility check", "Advance assurance application", "AI document review", "HMRC covering letter", "Agent authority letter", "Submission to HMRC", "HMRC response tracking", "One round of query support", "Money-back guarantee"],
     },
     {
-      name: "SEIS and EIS", price: "199", featured: true,
+      name: "SEIS and EIS", price: "249", featured: true,
       features: ["Everything in SEIS", "EIS advance assurance", "Combined SEIS and EIS submission", "Agent authority letter", "HMRC response tracking", "One round of query support (both schemes)", "Complex cases handled", "Money-back guarantee"],
     },
     {
-      name: "EIS only", price: "149", featured: false,
+      name: "EIS only", price: "179", featured: false,
       features: ["Eligibility check", "Advance assurance application", "AI document review", "HMRC covering letter", "Agent authority letter", "Submission to HMRC", "HMRC response tracking", "One round of query support", "Money-back guarantee"],
     },
   ];
@@ -128,7 +128,7 @@ export default function Home() {
           <em className="text-[#0d7a5f] not-italic font-serif">Seisly done.</em>
         </h1>
         <p className="font-serif text-[clamp(24px,3vw,36px)] text-[#1a1a18] mb-6 tracking-tight">
-          From &pound;149. Not &pound;2,000.
+          From &pound;179. Not &pound;2,000.
         </p>
         <p className="text-lg text-[#555] max-w-[520px] mx-auto mb-10 leading-relaxed font-light">
           HMRC-ready in under an hour.{" "}
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="bg-[#f0faf6] p-5 text-center">
             <div className="text-[11px] text-[#aaa] uppercase tracking-wide mb-1">&#10022; Seisly</div>
             <div className="text-sm font-medium text-[#0d7a5f] mb-3">All-in, no subscription</div>
-            <div className="font-serif text-[28px] text-[#0d7a5f] leading-none">&pound;149</div>
+            <div className="font-serif text-[28px] text-[#0d7a5f] leading-none">&pound;179</div>
             <div className="text-[11px] text-[#aaa] mt-1">One-time. Done.</div>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function Home() {
             <ul className="space-y-2 mb-6">
               <li className="flex justify-between text-sm">
                 <span className="text-[#666]">SEIS advance assurance</span>
-                <span className="font-medium text-[#0d7a5f]">£149</span>
+                <span className="font-medium text-[#0d7a5f]">£179</span>
               </li>
               <li className="flex justify-between text-sm">
                 <span className="text-[#666]"><a href="https://www.usenovar.ai" target="_blank" rel="noopener noreferrer" className="text-[#0d7a5f] hover:underline">Novar for Startups</a> (limited places)</span>
@@ -229,7 +229,7 @@ export default function Home() {
             <div className="border-t border-[#c0e8db] pt-4 flex justify-between items-baseline">
               <span className="text-sm font-medium text-[#0a5c47]">Total</span>
               <div className="text-right">
-                <span className="font-serif text-2xl text-[#0d7a5f]">&pound;149</span>
+                <span className="font-serif text-2xl text-[#0d7a5f]">&pound;179</span>
                 <p className="text-xs text-[#0d7a5f] mt-0.5">including Novar for Startups free for 3 months*</p>
               </div>
             </div>
@@ -373,6 +373,9 @@ export default function Home() {
                 <p className="text-xs text-[#aaa] mt-3 pt-3 border-t border-[#f0f0ec]">
                   Resubmission if required: £50 per attempt
                 </p>
+                <p className="text-xs text-[#888] mb-4 leading-relaxed">
+                  Standard review: up to 72 hours. Need it faster? Add Express Review (+£100) for guaranteed review within 24-36 hours.
+                </p>
                 <Link href="/eligibility">
                   <button className={`w-full py-3 rounded-lg text-sm font-medium transition-colors border border-[#0d7a5f] ${plan.featured ? "bg-[#0d7a5f] text-white hover:bg-[#0a5c47]" : "text-[#0d7a5f] hover:bg-[#0d7a5f] hover:text-white"}`}>
                     Get started &rarr;
@@ -429,7 +432,7 @@ export default function Home() {
         <h2 className="font-serif text-[clamp(36px,5vw,60px)] text-white leading-tight tracking-tight mb-2">
           Need SEIS or EIS<br />advance assurance?
         </h2>
-        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. From &pound;149.</p>
+        <p className="font-serif text-[clamp(28px,3vw,42px)] text-[#5DCAA5] italic mb-6">Seisly done. From &pound;179.</p>
         <p className="text-base text-[#9FE1CB] mb-8 font-light">
           Join the founders who skipped the lawyers and accountants,<br className="hidden sm:block" /> saved thousands, and got investor-ready faster.
         </p>

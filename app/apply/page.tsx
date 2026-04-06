@@ -283,7 +283,7 @@ function Step1CompanyDetails({ data, set, fieldClass, labelClass, inputClass, hi
       <div className={fieldClass}>
         <label className={labelClass}>Which scheme are you applying for?</label>
         <div className="space-y-2">
-          {([["seis", "SEIS only", "£149", "Raising up to £250,000"], ["eis", "EIS only", "£149", "Raising up to £5 million"], ["both", "SEIS and EIS", "£199", "Applying for both schemes"]] as const).map(([val, label, price, desc]) => (
+          {([["seis", "SEIS only", "£179", "Raising up to £250,000"], ["eis", "EIS only", "£179", "Raising up to £5 million"], ["both", "SEIS and EIS", "£249", "Applying for both schemes"]] as const).map(([val, label, price, desc]) => (
             <button key={val} onClick={() => set("scheme", val)}
               className={`w-full text-left border rounded-xl p-4 transition-all ${data.scheme === val ? "border-[#0d7a5f] bg-[#f0faf6]" : "border-[#e8e8e4] bg-white hover:border-[#0d7a5f]"}`}>
               <div className="flex justify-between items-center">
@@ -305,6 +305,7 @@ export default function ApplyPage() {
   const [data, setData] = useState<ApplicationData>(empty);
   const [saving, setSaving] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const [expressReview, setExpressReview] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showErrors, setShowErrors] = useState(false);
@@ -477,6 +478,7 @@ export default function ApplyPage() {
           scheme: data.scheme,
           email: data.email,
           applicationId: data.companyNumber,
+          express: expressReview,
         }),
       });
       const { url } = await res.json();
@@ -1100,7 +1102,7 @@ export default function ApplyPage() {
             <div className="mt-8 bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5">
               <p className="text-sm font-medium text-[#0a5c47] mb-2">What happens next</p>
               <p className="text-sm text-[#555] leading-relaxed">
-                Once you confirm, you will be taken to pay £{data.scheme === "seis" ? "149" : data.scheme === "eis" ? "149" : "199"}. After payment, you will need to upload your supporting documents (business plan, accounts, articles of association, shareholder list, and investor documents). We will then prepare your complete HMRC submission and submit it on your behalf as your agent.
+                Once you confirm, you will be taken to pay £{data.scheme === "seis" ? "179" : data.scheme === "eis" ? "179" : "249"}. After payment, you will need to upload your supporting documents (business plan, accounts, articles of association, shareholder list, and investor documents). We will then prepare your complete HMRC submission and submit it on your behalf as your agent.
               </p>
             </div>
 
@@ -1109,9 +1111,21 @@ export default function ApplyPage() {
                 {data.scheme === "seis" ? "SEIS advance assurance" : data.scheme === "eis" ? "EIS advance assurance" : "SEIS and EIS advance assurance"}
               </p>
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="font-serif text-4xl">&pound;{data.scheme === "seis" ? "149" : data.scheme === "eis" ? "149" : "199"}</span>
+                <span className="font-serif text-4xl">&pound;{data.scheme === "seis" ? "179" : data.scheme === "eis" ? "179" : "249"}</span>
                 <span className="text-sm text-[#aaa]">One-time payment.</span>
               </div>
+              <label className="flex items-start gap-3 cursor-pointer mb-4 border border-[#e8e8e4] rounded-lg p-4 hover:border-[#0d7a5f] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={expressReview}
+                  onChange={e => setExpressReview(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-[#e8e8e4] text-[#0d7a5f] focus:ring-[#0d7a5f] cursor-pointer"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#1a1a18]">Express Review (+£100)</p>
+                  <p className="text-xs text-[#888] mt-0.5">Guaranteed review within 24-36 hours instead of up to 72 hours.</p>
+                </div>
+              </label>
               <button
                 onClick={handlePayment}
                 disabled={saving}

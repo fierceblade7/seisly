@@ -41,6 +41,9 @@ function ReviewPageContent() {
   const [status, setStatus] = useState('loading')
   const [companyName, setCompanyName] = useState('')
   const [released, setReleased] = useState(false)
+  const [isExpress, setIsExpress] = useState(false)
+  const [slaDeadline, setSlaDeadline] = useState<string | null>(null)
+  const [slaHours, setSlaHours] = useState(72)
 
   // Declaration/authorisation flow
   const [flowStep, setFlowStep] = useState<'review' | 'declare' | 'declared' | 'authorised'>('review')
@@ -61,6 +64,9 @@ function ReviewPageContent() {
         const data = await res.json()
         setStatus(data.review_status || 'pending')
         setReleased(!!data.review_released)
+        if (data.is_express) setIsExpress(true)
+        if (data.sla_deadline) setSlaDeadline(data.sla_deadline)
+        if (data.review_sla_hours) setSlaHours(data.review_sla_hours)
         if (data.status === 'declared') setFlowStep('declared')
         if (data.status === 'authorised') setFlowStep('authorised')
 
@@ -133,9 +139,18 @@ function ReviewPageContent() {
           <div className="bg-white border border-[#e8e8e4] rounded-xl p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-6">&#10003;</div>
             <h2 className="font-serif text-2xl mb-3">Thank you - your application is with us</h2>
-            <p className="text-sm text-[#666] leading-relaxed mb-4">
-              We are reviewing your application and documents. This usually takes up to 24 hours. We will email you when your review is ready.
-            </p>
+            {isExpress ? (
+              <p className="text-sm text-[#666] leading-relaxed mb-4">
+                <span className="inline-block bg-[#fff8e6] border border-[#f5d88a] text-[#8a6500] text-xs px-2 py-0.5 rounded mb-2">Express Review</span><br />
+                Your application will be reviewed within 24-36 hours.
+                {slaDeadline && <> Expected by {new Date(slaDeadline).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}.</>}
+              </p>
+            ) : (
+              <p className="text-sm text-[#666] leading-relaxed mb-4">
+                Your application is being reviewed. Standard review time: up to 72 hours. At busy times, this may take longer - we will let you know.
+                {slaDeadline && <> Expected by {new Date(slaDeadline).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}.</>}
+              </p>
+            )}
             <p className="text-xs text-[#aaa]">You can close this page. We will email you at <strong>{email}</strong> when there is an update.</p>
           </div>
         )}
