@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
 
     // Add Express Review add-on if selected
     const isExpress = express === true
-    if (isExpress && process.env.STRIPE_PRICE_EXPRESS) {
+    if (isExpress) {
+      if (!process.env.STRIPE_PRICE_EXPRESS) {
+        throw new Error('STRIPE_PRICE_EXPRESS is not configured')
+      }
       lineItems.push({ price: process.env.STRIPE_PRICE_EXPRESS, quantity: 1 })
     }
 
