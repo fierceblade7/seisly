@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Footer from "../components/Footer";
+import Nav from "../components/Nav";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -473,20 +474,23 @@ export default function AdminPage() {
         </div>
       )}
 
-      <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-serif text-xl">Seis<span className="text-[#0d7a5f]">ly</span> <span className="text-xs text-[#aaa] font-sans ml-1">Admin</span></Link>
-          <div className="flex gap-1">
-            {(["submissions", "applications", "ops", "referrals"] as const).map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeTab === tab ? "bg-[#e8f5f1] text-[#0d7a5f]" : "text-[#888] hover:text-[#1a1a18]"}`}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button onClick={() => { setAuthenticated(false); setPassword(""); }} className="text-xs text-[#aaa] hover:text-[#1a1a18]">Log out</button>
-      </nav>
+      <Nav
+        variant="minimal"
+        leftSlot={
+          <>
+            <span className="text-xs text-[#aaa] font-sans">Admin</span>
+            <div className="flex gap-1">
+              {(["submissions", "applications", "ops", "referrals"] as const).map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${activeTab === tab ? "bg-[#e8f5f1] text-[#0d7a5f]" : "text-[#888] hover:text-[#1a1a18]"}`}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </>
+        }
+        rightSlot={<button onClick={() => { setAuthenticated(false); setPassword(""); }} className="text-xs text-[#aaa] hover:text-[#1a1a18]">Log out</button>}
+      />
 
       <div className="max-w-6xl mx-auto px-6 py-8">
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 
 const Logo = () => (
@@ -11,7 +11,13 @@ const Logo = () => (
   </svg>
 );
 
-export default function Nav() {
+type NavProps = {
+  variant?: "marketing" | "minimal";
+  leftSlot?: ReactNode;
+  rightSlot?: ReactNode;
+};
+
+export default function Nav({ variant = "marketing", leftSlot, rightSlot }: NavProps = {}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +31,20 @@ export default function Nav() {
   }, [open]);
 
   const close = () => setOpen(false);
+
+  if (variant === "minimal") {
+    return (
+      <nav className="sticky top-0 z-50 bg-[#fafaf8]/90 backdrop-blur-md border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link href="/">
+            <Logo />
+          </Link>
+          {leftSlot}
+        </div>
+        {rightSlot && <div className="flex items-center gap-4">{rightSlot}</div>}
+      </nav>
+    );
+  }
 
   return (
     <nav className="sticky top-0 z-50 bg-[#fafaf8]/90 backdrop-blur-md border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between">

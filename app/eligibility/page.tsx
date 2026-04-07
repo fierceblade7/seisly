@@ -2,8 +2,8 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Footer from "../components/Footer";
+import Nav from "../components/Nav";
 
 type Answer = "yes" | "no" | null;
 
@@ -507,17 +507,7 @@ function EligibilityPageContent() {
     <div className="min-h-screen bg-[#fafaf8]">
 
       {/* NAV */}
-      <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-[#fafaf8]">
-        <Link href="/">
-          <svg width="160" height="42" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
-            <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
-            <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
-            <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
-            <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
-          </svg>
-        </Link>
-        <div className="text-xs text-[#aaa]">Free eligibility check</div>
-      </nav>
+      <Nav variant="minimal" rightSlot={<div className="text-xs text-[#aaa]">Free eligibility check</div>} />
 
       {/* PROGRESS BAR */}
       <div className="h-1 bg-[#e8e8e4]">
