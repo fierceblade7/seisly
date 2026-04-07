@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,14 +43,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }
 
+  // Auth: caller must be signed in. We always use the session email — never
+  // a value supplied by the client — to prevent uploading documents against
+  // another user's application. The applications table has no user_id column.
+  const ssr = await createServerSupabaseClient()
+  const { data: { user: authUser } } = await ssr.auth.getUser()
+  if (!authUser || !authUser.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const email = authUser.email
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const docType = formData.get('docType') as string
-    const email = formData.get('email') as string
     const scheme = formData.get('scheme') as string
 
-    if (!file || !docType || !email) {
+    if (!file || !docType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 

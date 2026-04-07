@@ -1,17 +1,10 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase-client";
 import Footer from "../../components/Footer";
-
-const Logo = () => (
-  <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
-    <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
-    <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
-    <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
-  </svg>
-);
+import Nav from "../../components/Nav";
 
 const StatusBadge = ({ status }: { status: string }) => {
   const config = {
@@ -35,8 +28,10 @@ interface ReviewData { pass1?: ReviewPass1; pass2?: ReviewPass2; overall?: strin
 
 function ReviewPageContent() {
   const params = useSearchParams()
+  const router = useRouter()
   const email = params.get('email') || ''
   const scheme = params.get('scheme') || ''
+  const [authChecked, setAuthChecked] = useState(false)
   const [review, setReview] = useState<ReviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('loading')
@@ -61,7 +56,25 @@ function ReviewPageContent() {
   const [authoriseError, setAuthoriseError] = useState('')
 
   useEffect(() => {
-    if (!email) return
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) {
+        router.push("/login")
+        return
+      }
+      // Ownership guard: the URL ?email= must match the signed-in user.
+      // Without this, anyone authenticated could deep-link to another user's review.
+      // (The applications table has no user_id column — email is the natural key.)
+      if (!email || email.toLowerCase() !== (authUser.email || "").toLowerCase()) {
+        router.push("/dashboard")
+        return
+      }
+      setAuthChecked(true)
+    })
+  }, [router, email])
+
+  useEffect(() => {
+    if (!authChecked || !email) return
     const fetchReview = async () => {
       try {
         const res = await fetch(`/api/review/status?email=${encodeURIComponent(email)}&scheme=${scheme}`)
@@ -103,7 +116,7 @@ function ReviewPageContent() {
     fetchReview()
     const interval = setInterval(fetchReview, 5000)
     return () => clearInterval(interval)
-  }, [email, scheme, review])
+  }, [authChecked, email, scheme, review])
 
   const generateLetter = async () => {
     setLetterLoading(true)
@@ -126,7 +139,7 @@ function ReviewPageContent() {
     if (flowStep === 'declared' && !letterUrl && !letterLoading) generateLetter()
   }, [flowStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return (
+  if (!authChecked || loading) return (
     <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
       <p className="text-sm text-[#888]">Loading your review...</p>
     </div>
@@ -134,9 +147,7 @@ function ReviewPageContent() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center bg-white">
-        <Link href="/"><Logo /></Link>
-      </nav>
+      <Nav variant="minimal" />
 
       <div className="max-w-2xl mx-auto px-6 py-12">
         <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Application review</p>

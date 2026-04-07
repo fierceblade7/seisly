@@ -1,16 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-client";
 import Footer from "../../components/Footer";
-
-const Logo = () => (
-  <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
-    <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
-    <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
-    <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
-  </svg>
-);
+import Nav from "../../components/Nav";
 
 const DOCUMENTS = [
   {
@@ -52,6 +46,8 @@ const DOCUMENTS = [
 ];
 
 export default function UploadPage() {
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
   const [uploads, setUploads] = useState<Record<string, { file: File; status: "uploading" | "done" | "error"; url?: string }>>({});
   const [email, setEmail] = useState("");
   const [scheme, setScheme] = useState("");
@@ -60,11 +56,21 @@ export default function UploadPage() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const storedEmail = sessionStorage.getItem('seisly_email')
-    const storedScheme = sessionStorage.getItem('seisly_scheme')
-    if (storedEmail) setEmail(storedEmail)
-    if (storedScheme) setScheme(storedScheme)
-  }, [])
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) {
+        router.push("/login");
+        return;
+      }
+      // Always trust the session email — never sessionStorage — to prevent
+      // a malicious user from setting an arbitrary email and uploading docs
+      // against another user's application.
+      setEmail(authUser.email || "");
+      const storedScheme = sessionStorage.getItem('seisly_scheme')
+      if (storedScheme) setScheme(storedScheme)
+      setAuthChecked(true);
+    });
+  }, [router])
 
   const handleFileChange = async (docType: string, file: File) => {
     if (!email) {
@@ -132,12 +138,18 @@ export default function UploadPage() {
     setSubmitting(false);
   };
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
+        <p className="text-sm text-[#888]">Loading...</p>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#fafaf8]">
-        <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center bg-white">
-          <Link href="/"><Logo /></Link>
-        </nav>
+        <Nav variant="minimal" />
         <div className="max-w-xl mx-auto px-6 py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-8">&#10003;</div>
           <h1 className="font-serif text-4xl tracking-tight mb-4">Documents received.</h1>
@@ -177,10 +189,7 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
-        <Link href="/"><Logo /></Link>
-        <div className="text-xs text-[#aaa]">{uploadedCount} of {requiredDocs.length} required documents uploaded</div>
-      </nav>
+      <Nav variant="minimal" rightSlot={<div className="text-xs text-[#aaa]">{uploadedCount} of {requiredDocs.length} required documents uploaded</div>} />
 
       <div className="max-w-xl mx-auto px-6 py-12">
         <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Step 2 of 2</p>

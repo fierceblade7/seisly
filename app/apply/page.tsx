@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import Link from "next/link";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-client";
 import Footer from "../components/Footer";
+import Nav from "../components/Nav";
 
 type Scheme = "seis" | "eis" | "both";
 
@@ -46,15 +48,6 @@ interface ApplicationData {
   signatoryName: string;
   signatoryPosition: string;
 }
-
-const Logo = () => (
-  <svg width="140" height="37" viewBox="0 0 200 52" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="0" width="52" height="52" rx="11" fill="#0d7a5f"/>
-    <path d="M34 10 C34 10 18 10 18 18 C18 26 34 26 34 34 C34 42 18 42 18 42" fill="none" stroke="white" strokeWidth="3.8" strokeLinecap="round"/>
-    <text x="68" y="30" fontFamily="Georgia, serif" fontSize="30" fontWeight="400" fill="#1a1a18" letterSpacing="-0.8">Seis<tspan fill="#0d7a5f">ly</tspan></text>
-    <text x="70" y="47" fontFamily="Georgia, serif" fontSize="11" fontWeight="400" fill="#aaa" letterSpacing="0.8" fontStyle="italic">Seisly done.</text>
-  </svg>
-);
 
 // Steps are now defined as SEIS_STEPS and EIS_STEPS below the empty object
 
@@ -302,6 +295,8 @@ function Step1CompanyDetails({ data, set, fieldClass, labelClass, inputClass, hi
 }
 
 export default function ApplyPage() {
+  const router = useRouter();
+  const [authChecked, setAuthChecked] = useState(false);
   const [step, setStep] = useState(1);
   const [data, setData] = useState<ApplicationData>(empty);
   const [saving, setSaving] = useState(false);
@@ -310,6 +305,19 @@ export default function ApplyPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [showErrors, setShowErrors] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (!authUser) {
+        router.push("/login");
+        return;
+      }
+      // Pre-fill email from session so the application is keyed to the signed-in user
+      setData(prev => prev.email ? prev : { ...prev, email: authUser.email || "" });
+      setAuthChecked(true);
+    });
+  }, [router]);
 
   const isEis = data.scheme === "eis" || data.scheme === "both";
   const steps = isEis ? EIS_STEPS : SEIS_STEPS;
@@ -521,16 +529,19 @@ export default function ApplyPage() {
     </div>
   );
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
+        <p className="text-sm text-[#888]">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#fafaf8]">
 
       {/* NAV */}
-      <nav className="border-b border-[#e8e8e4] px-6 h-[60px] flex items-center justify-between bg-white">
-        <Link href="/"><Logo /></Link>
-        <div className="text-xs text-[#aaa]">
-          {saving ? "Saving..." : `Step ${step} of ${steps.length}`}
-        </div>
-      </nav>
+      <Nav variant="minimal" rightSlot={<div className="text-xs text-[#aaa]">{saving ? "Saving..." : `Step ${step} of ${steps.length}`}</div>} />
 
       {/* PROGRESS */}
       <div className="h-1 bg-[#e8e8e4]">
