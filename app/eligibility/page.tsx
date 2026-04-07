@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
 
@@ -763,7 +764,7 @@ function EligibilityPageContent() {
                   <em className="text-[#0d7a5f]">for {schemeLabel}.</em>
                 </h2>
                 <p className="text-sm text-[#666] leading-relaxed mb-8">
-                  Based on your answers, your company appears to meet the qualifying conditions for {schemeLabel} advance assurance. The full application is coming very soon. Leave your email and you will be first to know when it is ready.
+                  Your company appears to meet the qualifying conditions for {schemeLabel} advance assurance.
                 </p>
 
                 <div className="border border-[#e8e8e4] rounded-xl p-6 bg-white mb-6">
@@ -773,8 +774,11 @@ function EligibilityPageContent() {
                     <span className="text-sm text-[#aaa]">one-time payment</span>
                   </div>
                   <p className="text-xs text-[#aaa] mb-5">No subscription. No hidden fees. Money-back guarantee if rejected due to our error.</p>
-                  <p className="text-sm font-medium text-[#1a1a18] mb-3">Get early access</p>
-                  <EmailCapture source="eligibility_qualified" />
+                  <Link href="/apply">
+                    <button className="w-full bg-[#0d7a5f] text-white px-5 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
+                      Start your application &rarr;
+                    </button>
+                  </Link>
                 </div>
 
                 <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5 mb-6">
