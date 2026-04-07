@@ -68,8 +68,7 @@ export default function LoginPage() {
                 Sign in to Seisly
               </h1>
               <p className="text-sm text-[#666] mb-8 leading-relaxed">
-                Enter the email address you used when you applied.
-                We will send you a sign-in link, no password needed.
+                Enter your email address to continue. We&apos;ll send you a sign-in link, no password needed.
               </p>
 
               <div className="space-y-3">
@@ -94,9 +93,9 @@ export default function LoginPage() {
               </div>
 
               <p className="text-xs text-center text-[#aaa] mt-6">
-                Do not have an account yet?{" "}
+                Not sure if you qualify?{" "}
                 <Link href="/eligibility" className="text-[#0d7a5f] hover:underline">
-                  Check your eligibility
+                  Check your eligibility &rarr;
                 </Link>
               </p>
             </>
