@@ -50,7 +50,44 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error('[Stripe Webhook] Supabase update FAILED:', error.message, error.details, error.hint)
       } else if (!data || data.length === 0) {
-        console.error('[Stripe Webhook] Update matched 0 rows for email:', email, 'scheme:', scheme)
+        // Payment succeeded at Stripe but no application row exists for this email+scheme.
+        // Do NOT silently swallow this — return 500 so Stripe retries, and alert an admin.
+        const alertContext = {
+          session_id: session.id,
+          email,
+          scheme,
+          amount_total: session.amount_total,
+          currency: session.currency,
+          customer_email: session.customer_email,
+          payment_status: session.payment_status,
+          metadata: session.metadata,
+        }
+        console.error('[Stripe Webhook] CRITICAL: paid checkout has no matching application row', alertContext)
+
+        try {
+          const adminEmail = process.env.ADMIN_EMAIL || process.env.RESEND_FROM
+          if (adminEmail) {
+            const resend = new Resend(process.env.RESEND_API_KEY!)
+            await resend.emails.send({
+              from: 'Seisly <hello@seisly.com>',
+              to: adminEmail,
+              subject: '[Seisly] CRITICAL: Stripe payment with no matching application row',
+              html: `
+                <div style="font-family: monospace; font-size: 13px; line-height: 1.6;">
+                  <p><strong>A Stripe checkout completed but no applications row was found to mark as paid.</strong></p>
+                  <p>Stripe will retry this webhook. If retries also fail, the row must be recovered manually.</p>
+                  <pre style="background:#f5f5f2;padding:12px;border-radius:6px;overflow-x:auto;">${sanitiseHtml(JSON.stringify(alertContext, null, 2))}</pre>
+                </div>
+              `,
+            })
+          } else {
+            console.error('[Stripe Webhook] ADMIN_EMAIL / RESEND_FROM not set — cannot send alert email')
+          }
+        } catch (alertErr) {
+          console.error('[Stripe Webhook] Failed to send admin alert email:', alertErr)
+        }
+
+        return NextResponse.json({ error: 'No matching application row' }, { status: 500 })
       } else {
 
         // Create unique Novar promo code for this customer
