@@ -127,14 +127,23 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="flex gap-2 mt-4">
-                    <Link
-                      href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
-                      className="flex-1"
-                    >
-                      <button className="w-full border border-[#0d7a5f] text-[#0d7a5f] py-2 rounded-lg text-xs font-medium hover:bg-[#f0faf6] transition-colors">
-                        View application
-                      </button>
-                    </Link>
+                    {app.status !== "draft" && (
+                      <Link
+                        href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
+                        className="flex-1"
+                      >
+                        <button className="w-full border border-[#0d7a5f] text-[#0d7a5f] py-2 rounded-lg text-xs font-medium hover:bg-[#f0faf6] transition-colors">
+                          View application
+                        </button>
+                      </Link>
+                    )}
+                    {app.status === "draft" && (
+                      <Link href="/apply" className="flex-1">
+                        <button className="w-full bg-[#0d7a5f] text-white py-2 rounded-lg text-xs font-medium hover:bg-[#0a5c47] transition-colors">
+                          Continue application
+                        </button>
+                      </Link>
+                    )}
                     {app.status === "paid" && (
                       <Link href="/apply/upload" className="flex-1">
                         <button className="w-full bg-[#0d7a5f] text-white py-2 rounded-lg text-xs font-medium hover:bg-[#0a5c47] transition-colors">

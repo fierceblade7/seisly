@@ -69,6 +69,57 @@ const empty: ApplicationData = {
   signatoryName: "", signatoryPosition: "",
 };
 
+// Inverse of the column mapping in /api/application/save/route.ts.
+// Converts a snake_case DB row back into the camelCase form shape so a
+// loaded draft can be dropped straight into formData.
+function mapRowToFormData(row: Record<string, unknown>): ApplicationData {
+  const str = (v: unknown) => (typeof v === 'string' ? v : '');
+  const num = (v: unknown) => (v == null ? '' : String(v));
+  const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null);
+  return {
+    email: str(row.email),
+    scheme: (row.scheme as Scheme) ?? null,
+    companyName: str(row.company_name),
+    companyNumber: str(row.company_number),
+    utr: str(row.utr),
+    incorporatedAt: str(row.incorporated_at),
+    isKic: bool(row.is_kic),
+    kickReason: str(row.kick_reason),
+    riskToCapital: str(row.risk_to_capital),
+    qualifyingActivity: (row.qualifying_activity as 'trade' | 'rd' | null) ?? null,
+    tradeStarted: bool(row.trade_started),
+    tradeStartDate: str(row.trade_start_date),
+    tradeDescription: str(row.trade_description),
+    previousVcs: bool(row.previous_vcs),
+    previousVcsTypes: Array.isArray(row.previous_vcs_types) ? (row.previous_vcs_types as string[]) : [],
+    raisingAmount: num(row.raising_amount),
+    sharePurpose: str(row.share_purpose),
+    proposedInvestors: Array.isArray(row.proposed_investors)
+      ? (row.proposed_investors as { name: string; address: string; amount: string }[])
+      : [{ name: '', address: '', amount: '' }],
+    shareClass: str(row.share_class),
+    preferentialRights: bool(row.preferential_rights),
+    preferentialRightsDetail: str(row.preferential_rights_detail),
+    withinInitialPeriod: str(row.within_initial_period),
+    hasSubsidiaries: bool(row.has_subsidiaries),
+    grossAssetsBefore: str(row.gross_assets_before),
+    grossAssetsAfter: str(row.gross_assets_after),
+    employeeCount: num(row.employee_count),
+    ukIncorporated: bool(row.uk_incorporated),
+    registeredAddress: (row.registered_address as ApplicationData['registeredAddress']) ?? { line1: '', line2: '', city: '', postcode: '' },
+    ukEstablishmentAddress: (row.uk_establishment_address as ApplicationData['ukEstablishmentAddress']) ?? { line1: '', line2: '', city: '', postcode: '' },
+    establishmentNarrative: str(row.establishment_narrative),
+    hasCommercialSale: bool(row.has_commercial_sale),
+    firstCommercialSaleDate: str(row.first_commercial_sale_date),
+    outsidePeriodReason: str(row.outside_period_reason),
+    previousInvestmentAmount: num(row.previous_investment_amount),
+    previousInvestmentDate: str(row.previous_investment_date),
+    newMarketDetails: str(row.new_market_details),
+    signatoryName: str(row.signatory_name),
+    signatoryPosition: str(row.signatory_position),
+  };
+}
+
 const SEIS_STEPS = [
   { id: 1, title: "Company details" },
   { id: 2, title: "Scheme and risk" },
@@ -308,13 +359,85 @@ export default function ApplyPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
       if (!authUser) {
         router.push("/login");
         return;
       }
-      // Pre-fill email from session so the application is keyed to the signed-in user
-      setData(prev => prev.email ? prev : { ...prev, email: authUser.email || "" });
+
+      // Deep-link override: a URL like /apply?step=5 means "show me the
+      // form at this specific step". We read this once at mount and use
+      // it both to suppress the auto-redirect-to-upload for paid rows
+      // AND to override the resume-at-first-incomplete-step logic below.
+      const urlParams = new URLSearchParams(window.location.search);
+      const stepParam = urlParams.get('step');
+      const requestedStep = stepParam ? parseInt(stepParam, 10) : NaN;
+      const hasDeepLink = Number.isInteger(requestedStep) && requestedStep >= 1;
+
+      // Try to load any existing application across all three schemes.
+      // We don't know which scheme the user picked until they tell us, so
+      // fetch all three in parallel and use the most recently updated row.
+      try {
+        const responses = await Promise.all([
+          fetch('/api/application/load?scheme=seis'),
+          fetch('/api/application/load?scheme=eis'),
+          fetch('/api/application/load?scheme=both'),
+        ]);
+        const results = await Promise.all(
+          responses.map(r => r.json() as Promise<{ exists: boolean; application: Record<string, unknown> | null }>)
+        );
+        const existing = results
+          .filter(r => r.exists && r.application)
+          .map(r => r.application as Record<string, unknown>);
+
+        if (existing.length > 0) {
+          const mostRecent = existing.sort((a, b) => {
+            const at = a.updated_at ? new Date(a.updated_at as string).getTime() : 0;
+            const bt = b.updated_at ? new Date(b.updated_at as string).getTime() : 0;
+            return bt - at;
+          })[0];
+
+          // Already paid — jump to upload UNLESS the user explicitly
+          // deep-linked to a specific step (e.g. an email link asking
+          // them to fix a typo in pre-payment data).
+          if (mostRecent.paid === true && !hasDeepLink) {
+            router.push('/apply/upload');
+            return;
+          }
+
+          // Pre-populate the form from the loaded draft.
+          const loaded = mapRowToFormData(mostRecent);
+          setData(loaded);
+          const loadedSteps =
+            loaded.scheme === 'eis' || loaded.scheme === 'both' ? EIS_STEPS : SEIS_STEPS;
+
+          if (hasDeepLink) {
+            // Deep-link wins: clamp to the valid step range for this scheme.
+            const clamped = Math.min(Math.max(requestedStep, 1), loadedSteps.length);
+            setStep(clamped);
+          } else {
+            // Resume at the first step whose fields are still incomplete.
+            let resumeStep = loadedSteps[loadedSteps.length - 1].id;
+            for (const s of loadedSteps) {
+              const errs = validateStep(s.id, loaded, loadedSteps);
+              if (Object.keys(errs).length > 0) {
+                resumeStep = s.id;
+                break;
+              }
+            }
+            setStep(resumeStep);
+          }
+        } else {
+          // No existing draft — pre-fill the email from the session
+          // so the first save creates a row keyed to this user.
+          setData(prev => ({ ...prev, email: authUser.email || "" }));
+        }
+      } catch (loadErr) {
+        console.error('Failed to load existing application:', loadErr);
+        // Fall back to a fresh form with email pre-filled
+        setData(prev => ({ ...prev, email: authUser.email || "" }));
+      }
+
       setAuthChecked(true);
     });
   }, [router]);
@@ -333,9 +456,9 @@ export default function ApplyPage() {
     setErrors(prev => ({ ...prev, [field]: "" }));
   };
 
-  const validateStep = (s: number, d: ApplicationData): Record<string, string> => {
+  const validateStep = (s: number, d: ApplicationData, stepList = steps): Record<string, string> => {
     const e: Record<string, string> = {};
-    const stepTitle = steps.find(st => st.id === s)?.title;
+    const stepTitle = stepList.find(st => st.id === s)?.title;
     if (stepTitle === "Company details") {
       if (!d.companyName.trim()) e.companyName = "Please select your company from Companies House.";
       if (!d.companyNumber.trim()) e.companyNumber = "Company number is required.";
@@ -436,7 +559,7 @@ export default function ApplyPage() {
       await fetch("/api/application/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, status: 'draft' }),
       });
     } catch (e) {
       console.error(e);
@@ -445,7 +568,7 @@ export default function ApplyPage() {
     }
   };
 
-  const next = async () => {
+  const next = () => {
     setShowErrors(true);
     const errs = validateStep(step, data);
     setErrors(errs);
@@ -455,7 +578,9 @@ export default function ApplyPage() {
       return;
     }
     setShowErrors(false);
-    await saveProgress();
+    // Fire-and-forget: don't block step navigation on the network round-trip.
+    // Errors are logged inside saveProgress; the user is never shown a save error.
+    void saveProgress();
     setStep(s => Math.min(s + 1, steps.length));
     window.scrollTo(0, 0);
   };
@@ -470,6 +595,29 @@ export default function ApplyPage() {
   const handlePayment = async () => {
     setSaving(true);
     try {
+      // Pay-later guard: if this application has already been paid (in
+      // another tab, on another device, or earlier in this session), do
+      // not start a second checkout. Jump straight to upload instead.
+      // Fresh fetch — not from component state — to handle the
+      // multi-tab race where a parallel tab paid after this one mounted.
+      if (data.scheme) {
+        try {
+          const checkRes = await fetch(`/api/application/load?scheme=${encodeURIComponent(data.scheme)}`);
+          if (checkRes.ok) {
+            const checkData = await checkRes.json() as { exists: boolean; application: { paid?: boolean } | null };
+            if (checkData.exists && checkData.application?.paid === true) {
+              router.push('/apply/upload');
+              return;
+            }
+          }
+        } catch (checkErr) {
+          // If the check itself fails, fall through and let Stripe enforce
+          // any duplicate-payment guard. Don't block the user on a flaky
+          // network call to our own API.
+          console.error('Pre-payment paid-status check failed:', checkErr);
+        }
+      }
+
       sessionStorage.setItem('seisly_email', data.email)
       sessionStorage.setItem('seisly_scheme', data.scheme || '')
 

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,11 +17,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Too many requests, please try again later' }, { status: 429 })
   }
 
+  // Auth: caller must be signed in. We always use the session email —
+  // never a client-supplied email — so a caller cannot save against
+  // another user's application.
+  const authClient = await createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user || !user.email) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const email = user.email
+
   try {
     const body = await request.json()
 
+    // Protect paid rows: a 'draft' status write must never downgrade
+    // a row that has already been paid. Other status transitions
+    // (e.g. paid -> documents_uploaded) are allowed through.
+    let shouldStripStatus = false
+    if (body.scheme && body.status === 'draft') {
+      const { data: existing } = await supabase
+        .from('applications')
+        .select('paid')
+        .eq('email', email)
+        .eq('scheme', body.scheme)
+        .maybeSingle()
+      if (existing?.paid === true) {
+        shouldStripStatus = true
+      }
+    }
+
     const payload = {
-      email: body.email || null,
+      email,
       scheme: body.scheme || null,
       company_name: body.companyName || null,
       company_number: body.companyNumber || null,
@@ -59,7 +86,7 @@ export async function POST(request: NextRequest) {
       kick_reason: body.kickReason || null,
       proposed_investors: body.proposedInvestors || null,
       ...(body.documents_uploaded_at ? { documents_uploaded_at: body.documents_uploaded_at } : {}),
-      ...(body.status ? { status: body.status } : {}),
+      ...(body.status && !shouldStripStatus ? { status: body.status } : {}),
       updated_at: new Date().toISOString(),
     }
 
