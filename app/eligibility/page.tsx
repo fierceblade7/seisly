@@ -774,7 +774,7 @@ function EligibilityPageContent() {
                     <span className="text-sm text-[#aaa]">one-time payment</span>
                   </div>
                   <p className="text-xs text-[#aaa] mb-5">No subscription. No hidden fees. Money-back guarantee if rejected due to our error.</p>
-                  <Link href="/apply">
+                  <Link href={scheme ? `/apply?scheme=${scheme}` : "/apply"}>
                     <button className="w-full bg-[#0d7a5f] text-white px-5 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
                       Start your application &rarr;
                     </button>

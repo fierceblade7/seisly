@@ -374,6 +374,16 @@ export default function ApplyPage() {
       const requestedStep = stepParam ? parseInt(stepParam, 10) : NaN;
       const hasDeepLink = Number.isInteger(requestedStep) && requestedStep >= 1;
 
+      // Scheme deep-link: /apply?scheme=seis|eis|both pre-selects the
+      // scheme on step 1 so users coming from the eligibility checker
+      // don't have to re-pick it. Only honoured when no draft exists —
+      // a loaded draft's scheme always wins.
+      const schemeParam = urlParams.get('scheme');
+      const validSchemeParam: Scheme | null =
+        schemeParam === 'seis' || schemeParam === 'eis' || schemeParam === 'both'
+          ? schemeParam
+          : null;
+
       // Try to load any existing application across all three schemes.
       // We don't know which scheme the user picked until they tell us, so
       // fetch all three in parallel and use the most recently updated row.
@@ -430,7 +440,13 @@ export default function ApplyPage() {
         } else {
           // No existing draft — pre-fill the email from the session
           // so the first save creates a row keyed to this user.
-          setData(prev => ({ ...prev, email: authUser.email || "" }));
+          // Also honour ?scheme= so users coming from the eligibility
+          // checker land with their scheme already selected on step 1.
+          setData(prev => ({
+            ...prev,
+            email: authUser.email || "",
+            ...(validSchemeParam ? { scheme: validSchemeParam } : {}),
+          }));
         }
       } catch (loadErr) {
         console.error('Failed to load existing application:', loadErr);

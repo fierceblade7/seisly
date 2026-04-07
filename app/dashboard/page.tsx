@@ -102,11 +102,18 @@ export default function DashboardPage() {
             <p className="text-sm text-[#666] mb-4">
               You do not have any applications yet.
             </p>
-            <Link href="/eligibility">
-              <button className="bg-[#0d7a5f] text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
-                Check my eligibility
-              </button>
-            </Link>
+            <div className="flex flex-col gap-3 max-w-xs mx-auto">
+              <Link href="/apply">
+                <button className="w-full bg-[#0d7a5f] text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
+                  Start your application &rarr;
+                </button>
+              </Link>
+              <Link href="/eligibility">
+                <button className="w-full border border-[#0d7a5f] text-[#0d7a5f] px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#f0faf6] transition-colors">
+                  Check my eligibility
+                </button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
