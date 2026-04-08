@@ -135,6 +135,12 @@ function ReviewPageContent() {
     }
   }
 
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
+
   useEffect(() => {
     if (flowStep === 'declared' && !letterUrl && !letterLoading) generateLetter()
   }, [flowStep]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -147,7 +153,17 @@ function ReviewPageContent() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <Nav variant="minimal" />
+      <Nav
+        variant="minimal"
+        rightSlot={
+          <button
+            onClick={handleSignOut}
+            className="text-xs text-[#888] hover:text-[#1a1a18] transition-colors"
+          >
+            Sign out
+          </button>
+        }
+      />
 
       <div className="max-w-2xl mx-auto px-6 py-12">
         <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Application review</p>

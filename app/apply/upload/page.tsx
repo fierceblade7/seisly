@@ -138,6 +138,12 @@ export default function UploadPage() {
     setSubmitting(false);
   };
 
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-[#fafaf8] flex items-center justify-center">
@@ -149,7 +155,17 @@ export default function UploadPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#fafaf8]">
-        <Nav variant="minimal" />
+        <Nav
+          variant="minimal"
+          rightSlot={
+            <button
+              onClick={handleSignOut}
+              className="text-xs text-[#888] hover:text-[#1a1a18] transition-colors"
+            >
+              Sign out
+            </button>
+          }
+        />
         <div className="max-w-xl mx-auto px-6 py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-8">&#10003;</div>
           <h1 className="font-serif text-4xl tracking-tight mb-4">Documents received.</h1>
@@ -189,7 +205,20 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <Nav variant="minimal" rightSlot={<div className="text-xs text-[#aaa]">{uploadedCount} of {requiredDocs.length} required documents uploaded</div>} />
+      <Nav
+        variant="minimal"
+        rightSlot={
+          <>
+            <div className="text-xs text-[#aaa]">{uploadedCount} of {requiredDocs.length} required documents uploaded</div>
+            <button
+              onClick={handleSignOut}
+              className="text-xs text-[#888] hover:text-[#1a1a18] transition-colors"
+            >
+              Sign out
+            </button>
+          </>
+        }
+      />
 
       <div className="max-w-xl mx-auto px-6 py-12">
         <p className="text-[11px] text-[#0d7a5f] uppercase tracking-widest font-medium mb-3">Step 2 of 2</p>

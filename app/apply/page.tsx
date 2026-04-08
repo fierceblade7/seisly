@@ -668,6 +668,12 @@ export default function ApplyPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   const inputClass = "w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white";
   const textareaClass = "w-full border border-[#e8e8e4] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#0d7a5f] bg-white resize-none";
   const labelClass = "block text-sm font-medium text-[#1a1a18] mb-1.5";
@@ -705,7 +711,20 @@ export default function ApplyPage() {
     <div className="min-h-screen bg-[#fafaf8]">
 
       {/* NAV */}
-      <Nav variant="minimal" rightSlot={<div className="text-xs text-[#aaa]">{saving ? "Saving..." : `Step ${step} of ${steps.length}`}</div>} />
+      <Nav
+        variant="minimal"
+        rightSlot={
+          <>
+            <div className="text-xs text-[#aaa]">{saving ? "Saving..." : `Step ${step} of ${steps.length}`}</div>
+            <button
+              onClick={handleSignOut}
+              className="text-xs text-[#888] hover:text-[#1a1a18] transition-colors"
+            >
+              Sign out
+            </button>
+          </>
+        }
+      />
 
       {/* PROGRESS */}
       <div className="h-1 bg-[#e8e8e4]">
