@@ -1270,29 +1270,181 @@ export default function ApplyPage() {
               title="Review your application"
               subtitle="Check everything looks right before we prepare your submission."
             />
-            <div className="space-y-4">
-              {[
-                { label: "Company name", value: data.companyName },
-                { label: "Company number", value: data.companyNumber },
-                { label: "UTR", value: data.utr },
-                { label: "Incorporated", value: data.incorporatedAt ? data.incorporatedAt.split("-").reverse().join("/") : "" },
-                { label: "Scheme", value: data.scheme === "seis" ? "SEIS" : data.scheme === "eis" ? "EIS" : data.scheme === "both" ? "SEIS and EIS" : "" },
-                { label: "Amount raising", value: data.raisingAmount ? `£${Number(data.raisingAmount.replace(/,/g, "")).toLocaleString("en-GB")}` : "" },
-                { label: "Trade started", value: data.tradeStarted === true ? "Yes" : data.tradeStarted === false ? "No" : "" },
-                { label: "Previous VCS", value: data.previousVcs === true ? "Yes" : data.previousVcs === false ? "No" : "" },
-                { label: "Employees", value: data.employeeCount },
-                { label: "Gross assets before", value: ({ up_to_350k: "Up to £350,000", "350k_to_1m": "£350,001 to £1,000,000", up_to_1m: "Up to £1,000,000", "1m_to_5m": "£1,000,001 to £5,000,000", "5m_to_10m": "£5,000,001 to £10,000,000", "10m_to_15m": "£10,000,001 to £15,000,000", over_10m: "More than £10,000,000", over_15m: "More than £15,000,000" } as Record<string, string>)[data.grossAssetsBefore] || data.grossAssetsBefore },
-                { label: "Commercial sale", value: data.hasCommercialSale === true ? "Yes" : data.hasCommercialSale === false ? "No" : "" },
-                { label: "First commercial sale", value: data.firstCommercialSaleDate ? data.firstCommercialSaleDate.split("-").reverse().join("/") : "" },
-                { label: "Within initial period", value: data.withinInitialPeriod === "yes" ? "Yes" : data.withinInitialPeriod === "no" ? "No" : data.withinInitialPeriod === "not_sure" ? "Not sure" : "" },
-                { label: "Signatory", value: data.signatoryName ? `${data.signatoryName}, ${data.signatoryPosition}` : "" },
-              ].filter(r => r.value).map(row => (
-                <div key={row.label} className="flex justify-between items-start py-3 border-b border-[#f5f5f2]">
-                  <span className="text-sm text-[#666]">{row.label}</span>
-                  <span className="text-sm font-medium text-right max-w-[60%]">{row.value}</span>
+            {(() => {
+              const grossAssetsLabels: Record<string, string> = {
+                up_to_350k: "Up to £350,000",
+                "350k_to_1m": "£350,001 to £1,000,000",
+                up_to_1m: "Up to £1,000,000",
+                "1m_to_5m": "£1,000,001 to £5,000,000",
+                "5m_to_10m": "£5,000,001 to £10,000,000",
+                "10m_to_15m": "£10,000,001 to £15,000,000",
+                over_10m: "More than £10,000,000",
+                over_15m: "More than £15,000,000",
+              };
+              const sections: Array<{
+                title: string;
+                stepName: string;
+                rows?: { label: string; value: string }[];
+                longFields?: { label: string; value: string }[];
+                investors?: { name: string; address: string; amount: string }[];
+              }> = [
+                {
+                  title: "Company details",
+                  stepName: "Company details",
+                  rows: [
+                    { label: "Company name", value: data.companyName },
+                    { label: "Company number", value: data.companyNumber },
+                    { label: "UTR", value: data.utr },
+                    { label: "Incorporated", value: data.incorporatedAt ? data.incorporatedAt.split("-").reverse().join("/") : "" },
+                    { label: "Scheme", value: data.scheme === "seis" ? "SEIS" : data.scheme === "eis" ? "EIS" : data.scheme === "both" ? "SEIS and EIS" : "" },
+                  ],
+                },
+                {
+                  title: "Scheme and risk",
+                  stepName: "Scheme and risk",
+                  longFields: [
+                    { label: "Risk to capital", value: data.riskToCapital },
+                  ],
+                },
+                {
+                  title: "Your trade",
+                  stepName: "Your trade",
+                  rows: [
+                    { label: "Trade started", value: data.tradeStarted === true ? "Yes" : data.tradeStarted === false ? "No" : "" },
+                  ],
+                  longFields: [
+                    { label: "Trade description", value: data.tradeDescription },
+                  ],
+                },
+                {
+                  title: "Maximum permitted age",
+                  stepName: "Maximum permitted age",
+                  rows: [
+                    { label: "Commercial sale", value: data.hasCommercialSale === true ? "Yes" : data.hasCommercialSale === false ? "No" : "" },
+                    { label: "First commercial sale", value: data.firstCommercialSaleDate ? data.firstCommercialSaleDate.split("-").reverse().join("/") : "" },
+                    { label: "Within initial period", value: data.withinInitialPeriod === "yes" ? "Yes" : data.withinInitialPeriod === "no" ? "No" : data.withinInitialPeriod === "not_sure" ? "Not sure" : "" },
+                  ],
+                },
+                {
+                  title: "Previous funding",
+                  stepName: "Previous funding",
+                  rows: [
+                    { label: "Previous VCS", value: data.previousVcs === true ? "Yes" : data.previousVcs === false ? "No" : "" },
+                  ],
+                },
+                {
+                  title: "This raise",
+                  stepName: "This raise",
+                  rows: [
+                    { label: "Amount raising", value: data.raisingAmount ? `£${Number(data.raisingAmount.replace(/,/g, "")).toLocaleString("en-GB")}` : "" },
+                  ],
+                  longFields: [
+                    { label: "Share purpose", value: data.sharePurpose },
+                  ],
+                  investors: data.proposedInvestors,
+                },
+                {
+                  title: "Share structure",
+                  stepName: "Share structure",
+                  longFields: data.preferentialRights === true
+                    ? [{ label: "Preferential rights detail", value: data.preferentialRightsDetail }]
+                    : [],
+                },
+                {
+                  title: "Company limits",
+                  stepName: "Company limits",
+                  rows: [
+                    { label: "Employees", value: data.employeeCount },
+                    { label: "Gross assets before", value: grossAssetsLabels[data.grossAssetsBefore] || data.grossAssetsBefore },
+                  ],
+                },
+                {
+                  title: "Business address",
+                  stepName: "Business address",
+                  rows: [
+                    { label: "Signatory", value: data.signatoryName ? `${data.signatoryName}, ${data.signatoryPosition}` : "" },
+                  ],
+                },
+              ];
+
+              return (
+                <div>
+                  {sections.map(section => {
+                    const filledRows = (section.rows || []).filter(r => r.value);
+                    const filledLongFields = (section.longFields || []).filter(f => f.value);
+                    const filledInvestors = (section.investors || []).filter(
+                      inv => inv.name || inv.address || inv.amount
+                    );
+                    const hasContent =
+                      filledRows.length > 0 ||
+                      filledLongFields.length > 0 ||
+                      filledInvestors.length > 0;
+                    if (!hasContent) return null;
+
+                    return (
+                      <div key={section.title} className="mb-8">
+                        <div className="flex justify-between items-baseline mb-3">
+                          <h3 className="text-[11px] uppercase tracking-widest text-[#888] font-medium">
+                            {section.title}
+                          </h3>
+                          <button
+                            onClick={() => setStep(stepFor(section.stepName))}
+                            className="text-xs text-[#0d7a5f] hover:underline"
+                          >
+                            Edit
+                          </button>
+                        </div>
+
+                        {filledRows.length > 0 && (
+                          <div>
+                            {filledRows.map(row => (
+                              <div key={row.label} className="flex justify-between items-start py-3 border-b border-[#f5f5f2]">
+                                <span className="text-sm text-[#666]">{row.label}</span>
+                                <span className="text-sm font-medium text-right max-w-[60%]">{row.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {filledLongFields.length > 0 && (
+                          <div className={`space-y-4 ${filledRows.length > 0 ? "mt-4" : ""}`}>
+                            {filledLongFields.map(field => (
+                              <div key={field.label} className="border-b border-[#f5f5f2] pb-4">
+                                <p className="text-sm text-[#666] mb-2">{field.label}</p>
+                                <p className="text-sm text-[#1a1a18] leading-relaxed whitespace-pre-wrap">{field.value}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {filledInvestors.length > 0 && (
+                          <div className={filledRows.length > 0 || filledLongFields.length > 0 ? "mt-4" : ""}>
+                            <p className="text-sm text-[#666] mb-2">Proposed investors</p>
+                            <ul className="space-y-3">
+                              {filledInvestors.map((inv, i) => (
+                                <li key={i} className="text-sm text-[#1a1a18]">
+                                  <div>
+                                    <span className="font-medium">{inv.name || "(unnamed)"}</span>
+                                    {inv.amount && (
+                                      <span className="text-[#666]">
+                                        , £{Number(inv.amount.replace(/,/g, "")).toLocaleString("en-GB")}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {inv.address && (
+                                    <p className="text-xs text-[#888] mt-0.5">{inv.address}</p>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
 
             <div className="mt-8 bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5">
               <p className="text-sm font-medium text-[#0a5c47] mb-2">What happens next</p>

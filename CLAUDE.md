@@ -9,9 +9,11 @@ A web app that makes applying for SEIS and EIS advance assurance as easy and che
 Need SEIS or EIS advance assurance? Seisly done.
 
 ## Pricing
-- SEIS only: £99 one-time
-- EIS only: £149 one-time  
-- SEIS and EIS: £179 one-time
+- SEIS only: £179 one-time
+- EIS only: £179 one-time
+- SEIS and EIS: £249 one-time
+- Express Review add-on: £100
+- Resubmission: £50
 - No subscriptions ever
 
 ## Tech stack
