@@ -692,7 +692,7 @@ export default function ApplyPage() {
       </button>
       <button
         onClick={() => set(field, false)}
-        className={`py-3 rounded-lg text-sm font-medium border transition-all ${value === false ? "border-[#e55] bg-[#fff5f5] text-[#e55]" : "border-[#e8e8e4] bg-white text-[#1a1a18] hover:border-[#aaa]"}`}
+        className={`py-3 rounded-lg text-sm font-medium border transition-all ${value === false ? "border-[#0d7a5f] bg-[#f0faf6] text-[#0d7a5f]" : "border-[#e8e8e4] bg-white text-[#1a1a18] hover:border-[#0d7a5f]"}`}
       >
         No
       </button>
