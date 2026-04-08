@@ -64,6 +64,16 @@ interface OpsData {
   kbStats: { totalChunks: number; lastUpdated: string | null; sourceCount: number };
 }
 
+// ── Shared helpers ─────────────────────────────────────────
+
+function formatSlaDeadline(iso: string | null | undefined): string {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '-'
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 // ── Shared components ──────────────────────────────────────
 
 const CHECKLIST = [
@@ -589,6 +599,7 @@ export default function AdminPage() {
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Scheme</th>
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Status</th>
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Paid</th>
+                        <th className="text-left px-4 py-3 font-medium text-[#888]">SLA</th>
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Review</th>
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Created</th>
                         <th className="text-left px-4 py-3 font-medium text-[#888]">Updated</th>
@@ -611,6 +622,7 @@ export default function AdminPage() {
                             <td className="px-4 py-3">{app.scheme?.toUpperCase()}</td>
                             <td className="px-4 py-3"><StatusBadge status={app.status || "draft"} /></td>
                             <td className="px-4 py-3">{app.paid ? <span className="text-[#0d7a5f]">Yes</span> : <span className="text-[#ccc]">No</span>}</td>
+                            <td className="px-4 py-3 text-[#888]">{formatSlaDeadline(app.sla_deadline)}</td>
                             <td className="px-4 py-3"><RagBadge status={app.review_status} /></td>
                             <td className="px-4 py-3 text-[#888]">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB') : "-"}</td>
                             <td className="px-4 py-3 text-[#888]">{app.updated_at ? new Date(app.updated_at).toLocaleDateString('en-GB') : "-"}</td>
@@ -992,6 +1004,7 @@ export default function AdminPage() {
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Scheme</th>
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Status</th>
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Paid</th>
+                          <th className="text-left px-4 py-2 font-medium text-[#888]">SLA</th>
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Review</th>
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Created</th>
                           <th className="text-left px-4 py-2 font-medium text-[#888]">Updated</th>
@@ -1005,6 +1018,7 @@ export default function AdminPage() {
                             <td className="px-4 py-2">{app.scheme?.toUpperCase()}</td>
                             <td className="px-4 py-2"><StatusBadge status={app.status || "draft"} /></td>
                             <td className="px-4 py-2">{app.paid ? <span className="text-[#0d7a5f]">Yes</span> : <span className="text-[#ccc]">No</span>}</td>
+                            <td className="px-4 py-2 text-[#888]">{formatSlaDeadline(app.sla_deadline)}</td>
                             <td className="px-4 py-2"><RagBadge status={app.review_status} /></td>
                             <td className="px-4 py-2 text-[#888]">{app.created_at ? new Date(app.created_at).toLocaleDateString('en-GB') : "-"}</td>
                             <td className="px-4 py-2 text-[#888]">{app.updated_at ? new Date(app.updated_at).toLocaleDateString('en-GB') : "-"}</td>
