@@ -5,13 +5,13 @@ export default function LaunchBanner() {
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
-    const d = localStorage.getItem("seisly_launch_banner_dismissed");
+    const d = localStorage.getItem("seisly_launch_banner_dismissed_v2");
     if (!d) setDismissed(false);
   }, []);
 
   const dismiss = () => {
     setDismissed(true);
-    localStorage.setItem("seisly_launch_banner_dismissed", "true");
+    localStorage.setItem("seisly_launch_banner_dismissed_v2", "true");
   };
 
   if (dismissed) return null;
