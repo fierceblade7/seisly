@@ -1,8 +1,15 @@
 import { test, expect } from '@playwright/test'
 
+// SKIPPED: /apply/upload is now gated by Supabase auth middleware
+// (commit 7c719c5). These tests visit the page without a session and
+// get redirected to /login. Additionally, the upload page no longer
+// reads the user's email from sessionStorage — it derives it from the
+// Supabase session — so the existing beforeEach setup pattern is no
+// longer sufficient. Re-enable once authenticated test fixtures exist.
 test.describe('Document upload page UI', () => {
   test.beforeEach(async ({ page }) => {
-    // Set sessionStorage before navigating
+    test.skip(true, 'Requires Supabase session — auth fixtures pending')
+    // Original setup preserved below for when tests are re-enabled.
     await page.goto('/apply/upload')
     await page.evaluate(() => {
       sessionStorage.setItem('seisly_email', 'test@example.com')

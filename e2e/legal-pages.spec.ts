@@ -28,7 +28,10 @@ test.describe('Legal pages', () => {
   test('each legal page has a link back to homepage', async ({ page }) => {
     for (const path of ['/privacy', '/terms', '/cookies', '/acceptable-use']) {
       await page.goto(path)
-      const homeLink = page.getByRole('link').first()
+      // The first link inside the nav is the Logo wrapped in <Link href="/">.
+      // We scope to <nav> so the LaunchBanner's LinkedIn link (which renders
+      // above the nav from app/layout.tsx) doesn't shadow the home link.
+      const homeLink = page.getByRole('navigation').getByRole('link').first()
       await expect(homeLink).toHaveAttribute('href', '/')
     }
   })
