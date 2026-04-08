@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sanitiseHtml } from '@/lib/sanitise-html'
+import { schemeLabel } from '@/lib/scheme-label'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
           </div>
           <h1 style="font-size: 28px; font-weight: 400; margin-bottom: 16px;">Our review of your application</h1>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 16px;">
-            We have reviewed your ${scheme.toUpperCase()} advance assurance application${app?.company_name ? ` for <strong>${sanitiseHtml(app.company_name)}</strong>` : ''} and unfortunately we do not believe it would be successful with HMRC in its current form.
+            We have reviewed your ${schemeLabel(scheme)} advance assurance application${app?.company_name ? ` for <strong>${sanitiseHtml(app.company_name)}</strong>` : ''} and unfortunately we do not believe it would be successful with HMRC in its current form.
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 8px;">
             Here is what we found:

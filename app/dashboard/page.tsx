@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase-client";
 import { useRouter } from "next/navigation";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
+import { schemeLabel } from "@/lib/scheme-label";
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
   draft: { label: "In progress", color: "text-[#8a6500]", bg: "bg-[#fff8e6]", border: "border-[#f5d88a]" },
@@ -125,7 +126,7 @@ export default function DashboardPage() {
                     <div>
                       <h2 className="font-medium text-[#1a1a18]">{app.company_name || "Your company"}</h2>
                       <p className="text-xs text-[#888] mt-0.5">
-                        {app.scheme?.toUpperCase()} advance assurance
+                        {schemeLabel(app.scheme)} advance assurance
                       </p>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded border ${statusConfig.bg} ${statusConfig.color} ${statusConfig.border}`}>

@@ -190,7 +190,10 @@ function ReviewPageContent() {
   }
 
   useEffect(() => {
-    if (flowStep === 'declared' && !letterUrl && !letterLoading) generateLetter()
+    // Generate the authority letter only once the founder has authorised
+    // Seisly as their agent — the letter contains the authorisation text
+    // and only makes sense after that step.
+    if (flowStep === 'authorised' && !letterUrl && !letterLoading) generateLetter()
   }, [flowStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!authChecked || loading) return (
@@ -473,44 +476,6 @@ function ReviewPageContent() {
                   <p className="text-xs text-[#666]">Your application is locked. Choose how you would like to proceed.</p>
                 </div>
 
-                <div className="bg-white border border-[#e8e8e4] rounded-xl p-5">
-                  <p className="text-sm font-medium mb-2">Agent authority letter</p>
-                  <p className="text-xs text-[#888] mb-3 leading-relaxed">
-                    Your agent authority letter has been generated using the HMRC Venture Capital Schemes template. This will be submitted to HMRC with your application.
-                  </p>
-                  {letterLoading ? (
-                    <p className="text-xs text-[#aaa]">Generating your authority letter...</p>
-                  ) : letterUrl ? (
-                    <a
-                      href={letterUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block border border-[#0d7a5f] text-[#0d7a5f] px-4 py-2 rounded-lg text-xs font-medium hover:bg-[#f0faf6] transition-colors"
-                    >
-                      Download authority letter (PDF)
-                    </a>
-                  ) : (
-                    <button
-                      onClick={generateLetter}
-                      className="text-xs text-[#0d7a5f] border border-[#0d7a5f] px-4 py-2 rounded-lg hover:bg-[#f0faf6]"
-                    >
-                      Generate authority letter
-                    </button>
-                  )}
-                </div>
-
-                <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
-                  <h3 className="font-serif text-lg mb-2">Submit it yourself</h3>
-                  <p className="text-sm text-[#666] leading-relaxed mb-4">
-                    Download your complete application pack and step-by-step instructions
-                    for submitting to HMRC directly via their online service. Please note
-                    the money-back guarantee does not apply to self-submitted applications.
-                  </p>
-                  <button disabled
-                    className="w-full border border-[#e8e8e4] text-[#aaa] py-3 rounded-lg text-sm font-medium cursor-not-allowed">
-                    Download application pack - coming soon
-                  </button>
-                </div>
                 <div className="bg-white border border-[#0d7a5f] rounded-xl p-6">
                   <h3 className="font-serif text-lg mb-2">Let Seisly submit for you</h3>
                   <p className="text-sm text-[#666] leading-relaxed mb-4">
@@ -561,14 +526,69 @@ function ReviewPageContent() {
 
             {/* Authorised confirmation */}
             {flowStep === 'authorised' && (
-              <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-xl mx-auto mb-4">&#10003;</div>
-                <h3 className="font-serif text-xl mb-2">Submission authorised.</h3>
-                <p className="text-sm text-[#666] leading-relaxed">
-                  We have received your authorisation and will submit your application
-                  to HMRC shortly. You will receive a confirmation email with next steps.
-                  HMRC typically responds within 4 to 8 weeks.
-                </p>
+              <div className="space-y-4">
+                <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-6 text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-xl mx-auto mb-4">&#10003;</div>
+                  <h3 className="font-serif text-xl mb-2">All done - your application is authorised</h3>
+                  <p className="text-sm text-[#666] leading-relaxed">
+                    You have signed your accuracy declaration and authorised Seisly to submit your application to HMRC on your behalf. There is nothing more for you to do right now.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
+                  <h3 className="font-serif text-lg mb-2">What happens next</h3>
+                  <ol className="space-y-3 text-sm text-[#555] leading-relaxed">
+                    <li className="flex gap-3">
+                      <span className="text-[#0d7a5f] font-medium flex-shrink-0">1.</span>
+                      <span>We will submit your application to HMRC as your authorised agent within the next working day.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="text-[#0d7a5f] font-medium flex-shrink-0">2.</span>
+                      <span>HMRC typically responds within 4 to 8 weeks. We will track the response and let you know as soon as we hear back.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="text-[#0d7a5f] font-medium flex-shrink-0">3.</span>
+                      <span>If HMRC have follow-up questions, we will support you through one round of queries at no extra cost.</span>
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="bg-white border border-[#e8e8e4] rounded-xl p-6">
+                  <h3 className="font-serif text-lg mb-2">Your signed authority letter</h3>
+                  <p className="text-sm text-[#666] mb-4 leading-relaxed">
+                    This is the agent authority letter we will submit to HMRC alongside your application. Save a copy for your records.
+                  </p>
+                  {letterLoading ? (
+                    <p className="text-xs text-[#aaa]">Preparing your authority letter...</p>
+                  ) : letterUrl ? (
+                    <a
+                      href={letterUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block border border-[#0d7a5f] text-[#0d7a5f] px-4 py-2 rounded-lg text-xs font-medium hover:bg-[#f0faf6] transition-colors"
+                    >
+                      Download authority letter (PDF)
+                    </a>
+                  ) : (
+                    <button
+                      onClick={generateLetter}
+                      className="text-xs text-[#0d7a5f] border border-[#0d7a5f] px-4 py-2 rounded-lg hover:bg-[#f0faf6]"
+                    >
+                      Generate authority letter
+                    </button>
+                  )}
+                </div>
+
+                <div className="bg-[#f5f5f2] border border-[#e8e8e4] rounded-xl p-6 text-center">
+                  <p className="text-sm text-[#555] mb-4 leading-relaxed">
+                    You can check your dashboard for status updates at any time. We will also email you at <strong>{email}</strong> whenever there is news on your application.
+                  </p>
+                  <Link href="/dashboard">
+                    <button className="bg-[#0d7a5f] text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
+                      Go to your dashboard
+                    </button>
+                  </Link>
+                </div>
               </div>
             )}
           </div>

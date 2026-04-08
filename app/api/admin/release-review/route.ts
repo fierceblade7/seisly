@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sanitiseHtml } from '@/lib/sanitise-html'
+import { schemeLabel } from '@/lib/scheme-label'
 
 export const maxDuration = 30
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from: 'Seisly <hello@seisly.com>',
       to: email,
-      subject: `Your ${scheme.toUpperCase()} application review is ready - ${sanitiseHtml(app.company_name)}`,
+      subject: `Your ${schemeLabel(scheme)} application review is ready - ${sanitiseHtml(app.company_name)}`,
       html: `
         <div style="font-family: Georgia, serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #1a1a18;">
           <div style="margin-bottom: 32px;">
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
           </div>
           <h1 style="font-size: 28px; font-weight: 400; margin-bottom: 16px;">Your application review is ready.</h1>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 32px;">
-            We have reviewed your ${scheme.toUpperCase()} advance assurance application and supporting documents for <strong>${sanitiseHtml(app.company_name)}</strong>. Click below to view your results and proceed.
+            We have reviewed your ${schemeLabel(scheme)} advance assurance application and supporting documents for <strong>${sanitiseHtml(app.company_name)}</strong>. Click below to view your results and proceed.
           </p>
           <a href="${reviewUrl}" style="display: inline-block; background: #0d7a5f; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-family: sans-serif;">
             View your review
