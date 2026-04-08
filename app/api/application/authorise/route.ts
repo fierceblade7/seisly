@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { sanitiseHtml } from '@/lib/sanitise-html'
+import { schemeLabel } from '@/lib/scheme-label'
 import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
 const supabase = createClient(
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Scheme</td>
-              <td style="padding: 8px 0; font-weight: 500;">${(application?.scheme || scheme).toUpperCase()}</td>
+              <td style="padding: 8px 0; font-weight: 500;">${schemeLabel(application?.scheme || scheme)}</td>
             </tr>
             <tr style="border-bottom: 1px solid #f0f0ec;">
               <td style="padding: 8px 0; color: #888;">Founder email</td>
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
           </h1>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 16px;">
             Thank you, ${sanitiseHtml(application?.declared_by_name || name)}. We will now prepare and submit your
-            ${(application?.scheme || scheme).toUpperCase()} advance assurance application to HMRC
+            ${schemeLabel(application?.scheme || scheme)} advance assurance application to HMRC
             on behalf of ${sanitiseHtml(application?.company_name || companyName)}.
           </p>
           <p style="font-size: 15px; line-height: 1.6; color: #555; margin-bottom: 32px;">
