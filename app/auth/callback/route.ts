@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server"
 import { NextRequest, NextResponse } from "next/server"
 
-const ALLOWED_ORIGINS = ['https://seisly.com', 'http://localhost:3000']
+const ALLOWED_ORIGINS = ['https://www.seisly.com', 'https://seisly.com', 'http://localhost:3000']
 
 // Allowlist of OTP types we accept on the verify branch. Must match the
 // `type` parameter Supabase puts in the magic link template (`magiclink`)
@@ -12,7 +12,7 @@ const ALLOWED_OTP_TYPES = new Set(['magiclink', 'recovery', 'signup', 'email', '
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin: rawOrigin } = new URL(request.url)
-  const origin = ALLOWED_ORIGINS.includes(rawOrigin) ? rawOrigin : 'https://seisly.com'
+  const origin = ALLOWED_ORIGINS.includes(rawOrigin) ? rawOrigin : 'https://www.seisly.com'
   const code = searchParams.get("code")
   const tokenHash = searchParams.get("token_hash")
   const otpType = searchParams.get("type")
