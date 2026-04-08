@@ -51,6 +51,7 @@ export default function UploadPage() {
   const [uploads, setUploads] = useState<Record<string, { file: File; status: "uploading" | "done" | "error"; url?: string }>>({});
   const [email, setEmail] = useState("");
   const [scheme, setScheme] = useState("");
+  const [isExpress, setIsExpress] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [emailWarning, setEmailWarning] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -80,12 +81,12 @@ export default function UploadPage() {
         const results = await Promise.all(
           responses.map(r => r.json() as Promise<{
             exists: boolean;
-            application: { paid?: boolean; paid_at?: string; scheme?: string } | null;
+            application: { paid?: boolean; paid_at?: string; scheme?: string; is_express?: boolean } | null;
           }>)
         );
         const paidRows = results
           .map(r => r.application)
-          .filter((app): app is { paid?: boolean; paid_at?: string; scheme?: string } =>
+          .filter((app): app is { paid?: boolean; paid_at?: string; scheme?: string; is_express?: boolean } =>
             app !== null && app.paid === true
           )
           .sort((a, b) => {
@@ -96,6 +97,9 @@ export default function UploadPage() {
 
         if (paidRows.length > 0 && paidRows[0].scheme) {
           setScheme(paidRows[0].scheme);
+          if (paidRows[0].is_express === true) {
+            setIsExpress(true);
+          }
         } else {
           // No paid row found — fall back to sessionStorage
           const storedScheme = sessionStorage.getItem('seisly_scheme');
@@ -208,7 +212,7 @@ export default function UploadPage() {
           <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-8">&#10003;</div>
           <h1 className="font-serif text-4xl tracking-tight mb-4">Documents received.</h1>
           <p className="text-sm text-[#666] leading-relaxed mb-8">
-            We are now reviewing your documents and application. We will email you at <strong>{email}</strong> within 5 to 10 minutes with your review results. Once you have approved the review we will prepare your final HMRC submission.
+            We are now reviewing your documents and application. We will email you at <strong>{email}</strong> within {isExpress ? "24 to 36 hours" : "72 hours"} with your review results. Once you have approved the review we will prepare your final HMRC submission.
           </p>
           <div className="bg-[#f0faf6] border border-[#c0e8db] rounded-xl p-5 text-left">
             <p className="text-sm font-medium text-[#0a5c47] mb-3">What happens next</p>
