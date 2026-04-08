@@ -29,8 +29,9 @@ interface ReviewData { pass1?: ReviewPass1; pass2?: ReviewPass2; overall?: strin
 function ReviewPageContent() {
   const params = useSearchParams()
   const router = useRouter()
-  const email = params.get('email') || ''
-  const scheme = params.get('scheme') || ''
+  const urlScheme = params.get('scheme') || ''
+  const [email, setEmail] = useState('')
+  const [scheme, setScheme] = useState('')
   const [authChecked, setAuthChecked] = useState(false)
   const [review, setReview] = useState<ReviewData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -57,21 +58,68 @@ function ReviewPageContent() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (!authUser) {
+    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
+      if (!authUser || !authUser.email) {
         router.push("/login")
         return
       }
-      // Ownership guard: the URL ?email= must match the signed-in user.
-      // Without this, anyone authenticated could deep-link to another user's review.
-      // (The applications table has no user_id column — email is the natural key.)
-      if (!email || email.toLowerCase() !== (authUser.email || "").toLowerCase()) {
-        router.push("/dashboard")
+
+      // Email always comes from the session — never from the URL — so a
+      // user cannot deep-link to another user's review. The applications
+      // table has no user_id column; email is the natural key.
+      setEmail(authUser.email)
+
+      // Scheme: if the URL provided one (and it's valid), use it for
+      // disambiguation. Otherwise look up the user's most recently
+      // updated application across all three schemes and use its scheme.
+      // This is what makes the upload page's "View review progress" link
+      // work without URL params, while still letting the dashboard's per-
+      // row "View application" links target a specific application.
+      const validUrlScheme =
+        urlScheme === 'seis' || urlScheme === 'eis' || urlScheme === 'both'
+          ? urlScheme
+          : null
+
+      if (validUrlScheme) {
+        setScheme(validUrlScheme)
+        setAuthChecked(true)
         return
       }
-      setAuthChecked(true)
+
+      try {
+        const responses = await Promise.all([
+          fetch('/api/application/load?scheme=seis'),
+          fetch('/api/application/load?scheme=eis'),
+          fetch('/api/application/load?scheme=both'),
+        ])
+        const results = await Promise.all(
+          responses.map(r => r.json() as Promise<{
+            exists: boolean
+            application: { scheme?: string; updated_at?: string } | null
+          }>)
+        )
+        const apps = results
+          .map(r => r.application)
+          .filter((app): app is { scheme?: string; updated_at?: string } => app !== null)
+          .sort((a, b) => {
+            const at = a.updated_at ? new Date(a.updated_at).getTime() : 0
+            const bt = b.updated_at ? new Date(b.updated_at).getTime() : 0
+            return bt - at
+          })
+
+        if (apps.length > 0 && apps[0].scheme) {
+          setScheme(apps[0].scheme)
+          setAuthChecked(true)
+        } else {
+          // No application at all — nothing to review. Send to dashboard.
+          router.push('/dashboard')
+        }
+      } catch (err) {
+        console.error('Failed to load application for review:', err)
+        router.push('/dashboard')
+      }
     })
-  }, [router, email])
+  }, [router, urlScheme])
 
   useEffect(() => {
     if (!authChecked || !email) return

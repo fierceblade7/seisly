@@ -30,21 +30,47 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Protect paid rows: a 'draft' status write must never downgrade
-    // a row that has already been paid. Other status transitions
-    // (e.g. paid -> documents_uploaded) are allowed through.
-    let shouldStripStatus = false
-    if (body.scheme && body.status === 'draft') {
+    // Validate the status transition. This route is the user-facing save
+    // endpoint and only ever sees two legitimate status writes from the
+    // client: 'draft' (incremental form saves) and 'documents_uploaded'
+    // (after the user uploads their HMRC docs). All other status values —
+    // paid, declared, authorised, submitted, review_complete,
+    // needs_attention, etc. — are set by dedicated server routes (Stripe
+    // webhook, declare/authorise routes, admin routes) and must not be
+    // writable from an authenticated user posting to /save.
+    const ALLOWED_STATUSES = new Set(['draft', 'documents_uploaded'])
+    if (body.status !== undefined && !ALLOWED_STATUSES.has(body.status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 })
+    }
+
+    // One existing-row lookup used by BOTH the documents_uploaded transition
+    // check AND the draft-status downgrade protection. Only runs when a
+    // status is actually being set — saves an extra DB read on header-only
+    // updates.
+    let existingPaid: boolean | null = null
+    if (body.scheme && body.status !== undefined) {
       const { data: existing } = await supabase
         .from('applications')
         .select('paid')
         .eq('email', email)
         .eq('scheme', body.scheme)
         .maybeSingle()
-      if (existing?.paid === true) {
-        shouldStripStatus = true
-      }
+      existingPaid = existing?.paid ?? null
     }
+
+    // documents_uploaded requires the row to already be paid. Reject any
+    // attempt to skip the payment step.
+    if (body.status === 'documents_uploaded' && existingPaid !== true) {
+      return NextResponse.json(
+        { error: 'Cannot transition to documents_uploaded without a paid application' },
+        { status: 400 }
+      )
+    }
+
+    // Protect paid rows: a 'draft' status write must never downgrade a row
+    // that has already been paid (handles the user navigating back to /apply
+    // after payment and saving incremental edits — the paid status stays).
+    const shouldStripStatus = body.status === 'draft' && existingPaid === true
 
     const payload = {
       email,

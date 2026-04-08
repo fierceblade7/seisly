@@ -1,14 +1,33 @@
 "use client";
 import { Suspense } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-client";
 import Footer from "../../components/Footer";
 import Nav from "../../components/Nav";
 
 function SuccessPageContent() {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <div className="min-h-screen bg-[#fafaf8]">
-      <Nav variant="minimal" />
+      <Nav
+        variant="minimal"
+        rightSlot={
+          <button
+            onClick={handleSignOut}
+            className="text-xs text-[#888] hover:text-[#1a1a18] transition-colors"
+          >
+            Sign out
+          </button>
+        }
+      />
 
       <div className="max-w-xl mx-auto px-6 py-20 text-center">
         <div className="w-16 h-16 rounded-full bg-[#e8f5f1] border border-[#c0e8db] flex items-center justify-center text-2xl mx-auto mb-8">
@@ -38,7 +57,16 @@ function SuccessPageContent() {
           </ul>
         </div>
 
-        <div className="bg-[#1a1a18] rounded-xl p-6 mb-6 text-left">
+        <Link href="/apply/upload">
+          <button className="w-full bg-[#0d7a5f] text-white py-4 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
+            Upload my documents →
+          </button>
+        </Link>
+        <p className="text-xs text-[#aaa] mt-4">
+          You can also email them to <a href="mailto:support@seisly.com" className="text-[#0d7a5f]">support@seisly.com</a> if you prefer.
+        </p>
+
+        <div className="bg-[#1a1a18] rounded-xl p-6 mt-10 text-left">
           <p className="text-[11px] text-[#5DCAA5] uppercase tracking-widest mb-3">
             Seisly customer perk
           </p>
@@ -84,15 +112,6 @@ function SuccessPageContent() {
             raising SEIS/EIS investment. Subject to approval.
           </p>
         </div>
-
-        <Link href="/apply/upload">
-          <button className="w-full bg-[#0d7a5f] text-white py-4 rounded-lg text-sm font-medium hover:bg-[#0a5c47] transition-colors">
-            Upload my documents →
-          </button>
-        </Link>
-        <p className="text-xs text-[#aaa] mt-4">
-          You can also email them to <a href="mailto:support@seisly.com" className="text-[#0d7a5f]">support@seisly.com</a> if you prefer.
-        </p>
       </div>
       <Footer />
     </div>

@@ -57,7 +57,7 @@ export default function UploadPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+    supabase.auth.getUser().then(async ({ data: { user: authUser } }) => {
       if (!authUser) {
         router.push("/login");
         return;
@@ -66,8 +66,47 @@ export default function UploadPage() {
       // a malicious user from setting an arbitrary email and uploading docs
       // against another user's application.
       setEmail(authUser.email || "");
-      const storedScheme = sessionStorage.getItem('seisly_scheme')
-      if (storedScheme) setScheme(storedScheme)
+
+      // Look up the user's paid application across all three schemes. The
+      // paid row's scheme field is the source of truth — sessionStorage is
+      // only a fallback for edge cases (webhook delay, user landed here
+      // without going through checkout in this browser, etc).
+      try {
+        const responses = await Promise.all([
+          fetch('/api/application/load?scheme=seis'),
+          fetch('/api/application/load?scheme=eis'),
+          fetch('/api/application/load?scheme=both'),
+        ]);
+        const results = await Promise.all(
+          responses.map(r => r.json() as Promise<{
+            exists: boolean;
+            application: { paid?: boolean; paid_at?: string; scheme?: string } | null;
+          }>)
+        );
+        const paidRows = results
+          .map(r => r.application)
+          .filter((app): app is { paid?: boolean; paid_at?: string; scheme?: string } =>
+            app !== null && app.paid === true
+          )
+          .sort((a, b) => {
+            const at = a.paid_at ? new Date(a.paid_at).getTime() : 0;
+            const bt = b.paid_at ? new Date(b.paid_at).getTime() : 0;
+            return bt - at;
+          });
+
+        if (paidRows.length > 0 && paidRows[0].scheme) {
+          setScheme(paidRows[0].scheme);
+        } else {
+          // No paid row found — fall back to sessionStorage
+          const storedScheme = sessionStorage.getItem('seisly_scheme');
+          if (storedScheme) setScheme(storedScheme);
+        }
+      } catch (loadErr) {
+        console.error('Failed to load application for scheme detection:', loadErr);
+        const storedScheme = sessionStorage.getItem('seisly_scheme');
+        if (storedScheme) setScheme(storedScheme);
+      }
+
       setAuthChecked(true);
     });
   }, [router])
@@ -113,7 +152,6 @@ export default function UploadPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
           scheme: effectiveScheme,
           documents_uploaded_at: new Date().toISOString(),
           status: "documents_uploaded",
@@ -191,7 +229,7 @@ export default function UploadPage() {
             </ul>
           </div>
           <div className="mt-6">
-            <Link href={`/apply/review?email=${encodeURIComponent(email)}&scheme=${scheme}`}>
+            <Link href="/apply/review">
               <button className="w-full border border-[#0d7a5f] text-[#0d7a5f] py-3 rounded-lg text-sm font-medium hover:bg-[#f0faf6] transition-colors">
                 View review progress
               </button>
