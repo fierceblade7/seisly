@@ -409,8 +409,15 @@ export default function ApplyPage() {
 
           // Already paid — jump to upload UNLESS the user explicitly
           // deep-linked to a specific step (e.g. an email link asking
-          // them to fix a typo in pre-payment data).
-          if (mostRecent.paid === true && !hasDeepLink) {
+          // them to fix a typo in pre-payment data) OR the row is
+          // missing its company name. A paid row with no company name
+          // is a recovery case (data loss aftermath of the
+          // /api/application/save bug fixed in d0b73ff): the user needs
+          // the form back so they can re-enter, not a redirect to
+          // upload. Healthy paid rows always have company_name set, so
+          // this guard is a no-op for normal traffic.
+          const looksRecoverable = !mostRecent.company_name
+          if (mostRecent.paid === true && !hasDeepLink && !looksRecoverable) {
             router.push('/apply/upload');
             return;
           }
