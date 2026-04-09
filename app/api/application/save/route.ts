@@ -72,48 +72,92 @@ export async function POST(request: NextRequest) {
     // after payment and saving incremental edits — the paid status stays).
     const shouldStripStatus = body.status === 'draft' && existingPaid === true
 
-    const payload = {
+    // Build the upsert payload from a whitelist, only including fields that
+    // are explicitly present on the request body. Callers that send a partial
+    // body (e.g. /apply/upload sending just {scheme, status,
+    // documents_uploaded_at}) must NOT have their other columns wiped to
+    // null. An earlier version of this route built the full row from
+    // `body.X || null` on every call, which destroyed alesarita76's
+    // company_name, utr, trade_description and raising_amount when she
+    // submitted on /apply/upload. Never again — presence is the rule.
+    const payload: Record<string, unknown> = {
       email,
-      scheme: body.scheme || null,
-      company_name: body.companyName || null,
-      company_number: body.companyNumber || null,
-      utr: body.utr || null,
-      incorporated_at: body.incorporatedAt || null,
-      trade_started: body.tradeStarted ?? null,
-      trade_start_date: body.tradeStartDate || null,
-      trade_description: body.tradeDescription || null,
-      previous_vcs: body.previousVcs ?? null,
-      previous_vcs_types: body.previousVcsTypes || [],
-      raising_amount: body.raisingAmount ? parseFloat(body.raisingAmount.replace(/,/g, '')) : null,
-      share_purpose: body.sharePurpose || null,
-      share_class: body.shareClass || null,
-      preferential_rights: body.preferentialRights ?? null,
-      preferential_rights_detail: body.preferentialRightsDetail || null,
-      gross_assets_before: body.grossAssetsBefore || null,
-      employee_count: body.employeeCount ? parseInt(body.employeeCount) : null,
-      has_subsidiaries: body.hasSubsidiaries ?? null,
-      risk_to_capital: body.riskToCapital || null,
-      uk_incorporated: body.ukIncorporated ?? null,
-      registered_address: body.registeredAddress || null,
-      uk_establishment_address: body.ukEstablishmentAddress || null,
-      establishment_narrative: body.establishmentNarrative || null,
-      gross_assets_after: body.grossAssetsAfter || null,
-      has_commercial_sale: body.hasCommercialSale ?? null,
-      first_commercial_sale_date: body.firstCommercialSaleDate || null,
-      within_initial_period: body.withinInitialPeriod || null,
-      outside_period_reason: body.outsidePeriodReason || null,
-      previous_investment_amount: body.previousInvestmentAmount ? parseFloat(body.previousInvestmentAmount.replace(/,/g, '')) : null,
-      previous_investment_date: body.previousInvestmentDate || null,
-      new_market_details: body.newMarketDetails || null,
-      signatory_name: body.signatoryName || null,
-      signatory_position: body.signatoryPosition || null,
-      qualifying_activity: body.qualifyingActivity || null,
-      is_kic: body.isKic ?? null,
-      kick_reason: body.kickReason || null,
-      proposed_investors: body.proposedInvestors || null,
-      ...(body.documents_uploaded_at ? { documents_uploaded_at: body.documents_uploaded_at } : {}),
-      ...(body.status && !shouldStripStatus ? { status: body.status } : {}),
       updated_at: new Date().toISOString(),
+    }
+
+    // scheme is part of the upsert conflict key, so it must always be
+    // resolvable. Preserve the prior coercion (empty string → null).
+    if (body.scheme !== undefined) {
+      payload.scheme = body.scheme || null
+    }
+
+    // status has its own downgrade-protection logic above; only write it
+    // when it survived that check.
+    if (body.status !== undefined && !shouldStripStatus) {
+      payload.status = body.status
+    }
+
+    if (body.documents_uploaded_at !== undefined) {
+      payload.documents_uploaded_at = body.documents_uploaded_at
+    }
+
+    // Form-field whitelist: [bodyKey, columnName, optional transform].
+    // A field is only written when the key is present on `body` — sending
+    // `undefined` (or omitting the key) leaves the existing column untouched.
+    const parseMoney = (v: unknown): number | null => {
+      if (typeof v !== 'string' || v === '') return null
+      const n = parseFloat(v.replace(/,/g, ''))
+      return Number.isFinite(n) ? n : null
+    }
+    const parseCount = (v: unknown): number | null => {
+      if (typeof v !== 'string' || v === '') return null
+      const n = parseInt(v, 10)
+      return Number.isFinite(n) ? n : null
+    }
+
+    const FIELD_MAP: Array<[string, string, ((v: unknown) => unknown)?]> = [
+      ['companyName', 'company_name'],
+      ['companyNumber', 'company_number'],
+      ['utr', 'utr'],
+      ['incorporatedAt', 'incorporated_at'],
+      ['tradeStarted', 'trade_started'],
+      ['tradeStartDate', 'trade_start_date'],
+      ['tradeDescription', 'trade_description'],
+      ['previousVcs', 'previous_vcs'],
+      ['previousVcsTypes', 'previous_vcs_types'],
+      ['raisingAmount', 'raising_amount', parseMoney],
+      ['sharePurpose', 'share_purpose'],
+      ['shareClass', 'share_class'],
+      ['preferentialRights', 'preferential_rights'],
+      ['preferentialRightsDetail', 'preferential_rights_detail'],
+      ['grossAssetsBefore', 'gross_assets_before'],
+      ['employeeCount', 'employee_count', parseCount],
+      ['hasSubsidiaries', 'has_subsidiaries'],
+      ['riskToCapital', 'risk_to_capital'],
+      ['ukIncorporated', 'uk_incorporated'],
+      ['registeredAddress', 'registered_address'],
+      ['ukEstablishmentAddress', 'uk_establishment_address'],
+      ['establishmentNarrative', 'establishment_narrative'],
+      ['grossAssetsAfter', 'gross_assets_after'],
+      ['hasCommercialSale', 'has_commercial_sale'],
+      ['firstCommercialSaleDate', 'first_commercial_sale_date'],
+      ['withinInitialPeriod', 'within_initial_period'],
+      ['outsidePeriodReason', 'outside_period_reason'],
+      ['previousInvestmentAmount', 'previous_investment_amount', parseMoney],
+      ['previousInvestmentDate', 'previous_investment_date'],
+      ['newMarketDetails', 'new_market_details'],
+      ['signatoryName', 'signatory_name'],
+      ['signatoryPosition', 'signatory_position'],
+      ['qualifyingActivity', 'qualifying_activity'],
+      ['isKic', 'is_kic'],
+      ['kickReason', 'kick_reason'],
+      ['proposedInvestors', 'proposed_investors'],
+    ]
+
+    for (const [bodyKey, column, transform] of FIELD_MAP) {
+      if (body[bodyKey] !== undefined) {
+        payload[column] = transform ? transform(body[bodyKey]) : body[bodyKey]
+      }
     }
 
     // Upsert by email + scheme so we don't create duplicates
