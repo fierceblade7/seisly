@@ -10,7 +10,6 @@
 
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import Footer from "../components/Footer";
 import Nav from "../components/Nav";
 
@@ -218,6 +217,8 @@ export default function AdminPage() {
   const [decliningApp, setDecliningApp] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
   const [declineSubmitting, setDeclineSubmitting] = useState(false);
+  const [appDocuments, setAppDocuments] = useState<Record<string, Array<{ doc_type: string; file_name: string; uploaded_at: string; signed_url: string | null }>>>({});
+  const [loadingDocs, setLoadingDocs] = useState<string | null>(null);
 
   // Ops tab state
   const [opsData, setOpsData] = useState<OpsData | null>(null);
@@ -267,6 +268,20 @@ export default function AdminPage() {
       const data = await res.json();
       setAllApps(data.applications || []);
     } catch {}
+  }, [authHeaders]);
+
+  const fetchAppDocuments = useCallback(async (app: Application) => {
+    const key = `${app.email}__${app.scheme}`;
+    setLoadingDocs(key);
+    try {
+      const url = `/api/admin/application-documents?email=${encodeURIComponent(app.email)}&scheme=${encodeURIComponent(app.scheme)}`;
+      const res = await fetch(url, { headers: authHeaders() });
+      if (res.status === 401) { setAuthenticated(false); return; }
+      const data = await res.json();
+      setAppDocuments(prev => ({ ...prev, [key]: data.documents || [] }));
+    } catch {} finally {
+      setLoadingDocs(null);
+    }
   }, [authHeaders]);
 
   const fetchReferrals = useCallback(async () => {
@@ -559,8 +574,7 @@ export default function AdminPage() {
                         ))}
                       </div>
                     </div>
-                    <div className="px-6 py-4 border-t border-[#f0f0ec] flex items-center justify-between gap-3">
-                      <Link href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`} className="text-xs text-[#0d7a5f] hover:underline" target="_blank">View review</Link>
+                    <div className="px-6 py-4 border-t border-[#f0f0ec] flex items-center justify-end gap-3">
                       <button onClick={() => handleSubmit(app)} disabled={!allChecked(key) || submitting === key}
                         className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-colors ${allChecked(key) ? 'bg-[#0d7a5f] text-white hover:bg-[#0a5c47]' : 'bg-[#e8e8e4] text-[#aaa] cursor-not-allowed'}`}>
                         {submitting === key ? 'Submitting...' : `Mark as submitted (${checkedCount}/${CHECKLIST.length})`}
@@ -613,6 +627,7 @@ export default function AdminPage() {
                           <tr key={key} className="cursor-pointer hover:bg-[#fafaf8] transition-colors" onClick={() => {
                             setExpandedApp(isExpanded ? null : key);
                             if (!isExpanded && !editingNotes[key]) setEditingNotes(prev => ({ ...prev, [key]: app.admin_notes || "" }));
+                            if (!isExpanded && !appDocuments[key]) fetchAppDocuments(app);
                           }}>
                             <td className="px-4 py-3 font-medium text-[#1a1a18]">
                               {app.company_name || "-"}
@@ -871,15 +886,43 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Links */}
-                      <div className="flex gap-4">
-                        <Link href={`/apply/review?email=${encodeURIComponent(app.email)}&scheme=${app.scheme}`}
-                          target="_blank" className="text-xs text-[#0d7a5f] hover:underline">View founder review</Link>
-                        {app.authority_letter_url && (
-                          <a href={app.authority_letter_url as string} target="_blank" rel="noopener noreferrer"
-                            className="text-xs text-[#0d7a5f] hover:underline">Authority letter</a>
+                      {/* Uploaded documents */}
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-[#888] mb-2">Uploaded documents</p>
+                        {loadingDocs === key && !appDocuments[key] ? (
+                          <p className="text-xs text-[#aaa]">Loading…</p>
+                        ) : (appDocuments[key] && appDocuments[key].length > 0) ? (
+                          <div className="bg-white rounded-lg border border-[#e8e8e4] divide-y divide-[#f0f0ec]">
+                            {appDocuments[key].map(doc => (
+                              <div key={doc.doc_type} className="px-3 py-2 flex items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium">{doc.doc_type}</p>
+                                  <p className="text-[10px] text-[#666] truncate">{doc.file_name}</p>
+                                  <p className="text-[10px] text-[#aaa]">
+                                    {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleString('en-GB') : ''}
+                                  </p>
+                                </div>
+                                {doc.signed_url ? (
+                                  <a href={doc.signed_url} target="_blank" rel="noopener noreferrer"
+                                    className="text-xs text-[#0d7a5f] hover:underline shrink-0">Open</a>
+                                ) : (
+                                  <span className="text-[10px] text-[#c0392b] shrink-0">No signed URL</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-[#aaa]">No documents uploaded yet.</p>
                         )}
                       </div>
+
+                      {/* Links */}
+                      {app.authority_letter_url && (
+                        <div className="flex gap-4">
+                          <a href={app.authority_letter_url as string} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-[#0d7a5f] hover:underline">Authority letter</a>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
