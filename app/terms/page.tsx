@@ -83,6 +83,11 @@ export default function TermsOfUse() {
           </section>
 
           <section>
+            <h2 className="font-serif text-xl text-[#1a1a18] mb-3">Our right to decline</h2>
+            <p>Seisly reserves the right to decline to proceed with any application at its sole discretion and for any reason. In the event that Seisly exercises this right, a full refund of any fees paid will be issued to the applicant. No further obligation shall arise on the part of Seisly in such circumstances.</p>
+          </section>
+
+          <section>
             <h2 className="font-serif text-xl text-[#1a1a18] mb-3">HMRC advance assurance - no guarantee of outcome</h2>
             <p>Seisly prepares and submits advance assurance applications to HMRC on your behalf. We do not guarantee, promise, or represent that any application will be approved by HMRC.</p>
             <p className="mt-3">Advance assurance is a discretionary service provided by HMRC. HMRC is not bound by any previous decisions and may refuse advance assurance even where a company appears to meet all qualifying conditions. HMRC&apos;s decision is final and there is no right of appeal against it.</p>
